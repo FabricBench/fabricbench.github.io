@@ -465,50 +465,6 @@ footer .foot { display:grid; grid-template-columns:1fr 1.3fr; gap:40px; align-it
   .titleblock .btns, .titleblock .cta { margin-top:12px; }
   .pvw { max-height:calc(100vh - 80px); aspect-ratio:auto; height:calc(100vh - 80px); }
 }
-/* 论文标题 / 作者 / 单位 */
-.byline { padding:clamp(64px,9vh,110px) 0 clamp(56px,8vh,90px); border-bottom:1px solid var(--line); }
-.by-k { font-size:11px; letter-spacing:.1em; }
-.by-k .venue { color:var(--accent); }
-.ptitle { margin-top:18px; max-width:1100px; font-size:clamp(28px,3.3vw,48px); line-height:1.1; }
-.names { margin-top:30px; display:flex; flex-wrap:wrap; gap:8px 24px; font-size:clamp(15px,1.25vw,18px); font-weight:500; color:var(--text); max-width:1100px; }
-.names a { cursor:pointer; border-bottom:1px solid transparent; transition:border-color .2s; }
-.names a:hover { border-color:var(--muted); }
-.names sup, .affs sup { font-size:.62em; color:var(--accent); margin-left:1px; font-weight:500; }
-.affs { margin-top:16px; display:flex; flex-wrap:wrap; gap:4px 24px; font-size:14px; color:var(--muted); }
-.notes { margin-top:8px; display:flex; gap:20px; font-size:13px; color:var(--muted); }
-.notes b { color:var(--accent); font-weight:500; }
-.logos { display:flex; gap:14px; flex-wrap:wrap; margin-top:30px; }
-.logos i { width:132px; height:48px; border:1px dashed var(--line); border-radius:6px; display:flex; align-items:center; justify-content:center; font:500 9px/1 "JetBrains Mono", monospace; letter-spacing:.1em; color:var(--muted); font-style:normal; }
-.meta { display:grid; grid-template-columns:140px 1fr; gap:12px 0; margin-top:36px; padding-top:26px; border-top:1px solid var(--line); max-width:720px; }
-.meta dt { font:500 11px/22px "JetBrains Mono", monospace; letter-spacing:.1em; color:var(--muted); }
-.meta dd { font-size:15px; line-height:22px; }
-.meta a { color:var(--accent); }
-.meta a.soon { color:var(--muted); cursor:default; }
-@media (max-width: 760px) {
-  .names { gap:4px 16px; margin-top:22px; }
-  .affs { font-size:13px; flex-direction:column; }
-  .notes { flex-direction:column; gap:2px; }
-  .logos i { width:96px; height:38px; }
-  .meta { grid-template-columns:112px 1fr; }
-}
-/* 竖屏(手机+平板)首屏:视频占上方约 62%,标题落在深色底上;横屏仍铺满 */
-@media (orientation: portrait) {
-  .frame { inset:0 0 auto 0; height:62vh; }
-  .veil { background:linear-gradient(180deg, rgba(9,11,15,.55) 0%, rgba(9,11,15,0) 20%, rgba(9,11,15,0) 72%, rgba(9,11,15,1) 100%); }
-}
-/* 电脑竖屏(宽>760 的竖屏):字号随宽度放大,四个数字常显;视频高度由 JS 算到标题中线(--fh) */
-@media (orientation: portrait) and (min-width: 761px) {
-  .frame { height:var(--fh,64vh); }
-  .kicker { font-size:1.35vw; margin-bottom:2vw; }
-  .titleblock h1 { font-size:13vw; }
-  .titleblock .sub { font-size:2.1vw; max-width:78%; margin-top:2.4vw; }
-  .cta .btn { font-size:1.5vw; padding:1.2vw 2.2vw; }
-  .row { flex-direction:column; align-items:flex-start; gap:4vw; }
-  .stat { opacity:1 !important; transform:none !important; }
-  .stats { gap:5vw; }
-  .stat b { font-size:4.6vw; }
-  .stat small { font-size:1.2vw; }
-}
 </style>
 </head>
 <body>
@@ -546,26 +502,6 @@ footer .foot { display:grid; grid-template-columns:1fr 1.3fr; gap:40px; align-it
     <div class="progress"><i id="bar"></i></div>
   </div>
 </header>
-
-<!-- ═════════ 论文标题 / 作者 / 单位(版式占位,内容待填) ═════════ -->
-<section class="byline" id="paper">
-  <div class="wrap">
-    <div class="by-k mono"><span class="venue">Venue 2027 · placeholder</span></div>
-    <h2 class="ptitle">FabricBench: A Standardized Policy Benchmark for Bimanual Fabric Manipulation with a Contact-Driven Deformable Simulator</h2>
-    <p class="names">
-      <a>Author Name<sup>1*</sup></a><a>Author Name<sup>1*</sup></a><a>Author Name<sup>2</sup></a><a>Author Name<sup>1</sup></a><a>Author Name<sup>3</sup></a><a>Author Name<sup>2</sup></a><a>Author Name<sup>1</sup></a><a>Author Name<sup>3</sup></a><a>Author Name<sup>1†</sup></a>
-    </p>
-    <p class="affs"><span><sup>1</sup>Affiliation One</span><span><sup>2</sup>Affiliation Two</span><span><sup>3</sup>Affiliation Three</span></p>
-    <p class="notes"><span><b>*</b> Equal contribution</span><span><b>†</b> Corresponding author</span></p>
-    <div class="logos"><i>LOGO</i><i>LOGO</i><i>LOGO</i></div>
-    <dl class="meta">
-      <dt>PAPER</dt><dd><a class="soon">arXiv · coming soon</a></dd>
-      <dt>CODE</dt><dd><a class="soon">GitHub · coming soon</a></dd>
-      <dt>LEADERBOARD</dt><dd><a href="#leaderboard">View leaderboard →</a></dd>
-      <dt>CITE</dt><dd><a href="#cite">BibTeX ↓</a></dd>
-    </dl>
-  </div>
-</section>
 
 <main>
   <!-- ═════════ [01] 任务 ═════════ -->
@@ -747,7 +683,7 @@ footer .foot { display:grid; grid-template-columns:1fr 1.3fr; gap:40px; align-it
     <div class="wrap foot">
       <div><div class="mark" style="font-family:var(--display);font-size:22px;font-weight:var(--display-weight);letter-spacing:var(--display-track);color:var(--text)">FabricBench</div>
         <p style="margin-top:10px">Internal preview · 2026 · simulator, assets, demonstrations and evaluation code to be released.</p></div>
-      <pre class="bib mono" id="cite">@inproceedings{fabricbench2027,
+      <pre class="bib mono">@inproceedings{fabricbench2027,
   title  = {FabricBench: A Standardized Policy Benchmark for Bimanual
             Fabric Manipulation with a Contact-Driven Deformable Simulator},
   author = {...},
@@ -757,6 +693,19 @@ footer .foot { display:grid; grid-template-columns:1fr 1.3fr; gap:40px; align-it
   </footer>
 </main>
 
+
+<div class="picker" id="picker">
+  <span class="x" id="pmin">–</span>
+  <div class="body">
+    <h4>整体风格</h4>
+    <div class="opt">
+      <label><input type="radio" name="theme" value="cinema"> A · 暗色电影感(衬线)</label>
+      <label><input type="radio" name="theme" value="paper"> B · 浅色期刊感(画框)</label>
+      <label><input type="radio" name="theme" value="tech" checked> C · 暗色科技感(推荐)</label>
+    </div>
+
+  </div>
+</div>
 
 <script>
 /* ════════ 数据(论文 Table main / Table shift) ════════ */
@@ -1103,17 +1052,12 @@ let s2rRz = 0; addEventListener('resize', ()=>{ clearTimeout(s2rRz); s2rRz = set
 const rio = new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); rio.unobserve(e.target); } }), {threshold:.12, rootMargin:"0px 0px -8% 0px"});
 document.querySelectorAll(".rv").forEach(el=>rio.observe(el));
 
-/* ════════ 电脑竖屏:视频延伸到标题中线,不留黑边 ════════ */
-function fitHero(){
-  const root = document.documentElement;
-  if (!matchMedia("(orientation: portrait) and (min-width: 761px)").matches) { root.style.removeProperty("--fh"); return; }
-  const h = document.querySelector(".titleblock h1"), stage = document.querySelector(".stage");
-  root.style.setProperty("--fh", (h.getBoundingClientRect().top - stage.getBoundingClientRect().top + h.offsetHeight*0.55) + "px");
-}
-fitHero(); addEventListener("resize", fitHero); document.fonts && document.fonts.ready.then(fitHero);
-
-/* ════════ 调试参数:index.html?t=秒 / ?y=屏数 ════════ */
+/* ════════ 方案切换 ════════ */
+document.querySelectorAll('input[name=theme]').forEach(r=> r.onchange = ()=>{ document.documentElement.dataset.theme = r.value; renderSlope(); });
+document.getElementById("pmin").onclick = ()=> document.getElementById("picker").classList.toggle("min");
+// 也可用地址参数直达某方案:index.html?theme=paper&order=wide
 { const q = new URLSearchParams(location.search);
+  for (const k of ["theme"]) { const v=q.get(k); const r=v && document.querySelector(`input[name=${k}][value=${v}]`); if(r){ r.checked=true; r.onchange(); } }
   const tq=q.get("t"); if(tq){ vid.currentTime=+tq; } const y=q.get("y"); if(y) setTimeout(()=>{ scrollTo({top:+y*innerHeight}); onScroll(); },50); }
 </script>
 </body>
