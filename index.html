@@ -1,0 +1,1064 @@
+<!doctype html>
+<html lang="en" data-theme="tech">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FabricBench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ───────── 三套风格(右下角切换) ───────── */
+:root, [data-theme="cinema"] {
+  --bg:#0f0e0c; --bg2:#171512; --line:#2a2722; --text:#ece7df; --muted:#8e877c;
+  --accent:#d6a35c; --accent-rgb:214,163,92;
+  --display:"Instrument Serif", Georgia, serif; --display-weight:400; --display-track:-0.01em;
+  --body:"Inter", system-ui, sans-serif; --num:"Inter", system-ui, sans-serif;
+  --veil:linear-gradient(180deg, rgba(15,14,12,.55) 0%, rgba(15,14,12,0) 20%, rgba(15,14,12,0) 45%, rgba(15,14,12,.95) 100%), radial-gradient(120% 80% at 0% 100%, rgba(15,14,12,.7) 0%, rgba(15,14,12,0) 60%);
+}
+[data-theme="paper"] {
+  --bg:#f4f1ea; --bg2:#ebe7de; --line:#d6d0c4; --text:#1b1a17; --muted:#6c665c;
+  --accent:#a8432c; --accent-rgb:168,67,44;
+  --display:"Instrument Serif", Georgia, serif; --display-weight:400; --display-track:-0.015em;
+  --body:"Inter", system-ui, sans-serif; --num:"Inter", system-ui, sans-serif;
+  --veil:none;
+}
+[data-theme="tech"] {
+  --bg:#090b0f; --bg2:#10141b; --line:#1e2530; --text:#e5e9f0; --muted:#7b8594;
+  --accent:#7cc4ff; --accent-rgb:124,196,255;
+  --display:"Inter Tight", system-ui, sans-serif; --display-weight:600; --display-track:-0.035em;
+  --body:"Inter", system-ui, sans-serif; --num:"JetBrains Mono", ui-monospace, monospace;
+  --veil:linear-gradient(180deg, rgba(9,11,15,.6) 0%, rgba(9,11,15,0) 20%, rgba(9,11,15,0) 45%, rgba(9,11,15,.96) 100%), radial-gradient(120% 80% at 0% 100%, rgba(9,11,15,.7) 0%, rgba(9,11,15,0) 60%);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+html { background:var(--bg); }
+body { background:var(--bg); color:var(--text); font-family:var(--body); font-weight:400;
+  -webkit-font-smoothing:antialiased; transition:background .4s, color .4s; }
+a { color:inherit; text-decoration:none; }
+
+/* ───────── 顶栏 ───────── */
+.nav { position:fixed; inset:0 0 auto 0; z-index:20; display:flex; align-items:center; justify-content:space-between;
+  padding:22px clamp(16px,4vw,56px); font-size:13px; letter-spacing:.02em; mix-blend-mode:normal;
+  transition:background .3s, border-color .3s; border-bottom:1px solid transparent; }
+.nav.solid { background:color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter:blur(12px); border-color:var(--line); padding-top:14px; padding-bottom:14px; }
+.nav .mark { font-family:var(--display); font-weight:var(--display-weight); font-size:22px; letter-spacing:var(--display-track); }
+.nav .links { display:flex; gap:28px; color:var(--muted); }
+.nav .links a:hover { color:var(--text); }
+[data-theme="cinema"] .nav:not(.solid), [data-theme="tech"] .nav:not(.solid) { color:#f2eee8; }
+[data-theme="cinema"] .nav:not(.solid) .links, [data-theme="tech"] .nav:not(.solid) .links { color:rgba(242,238,232,.7); }
+
+/* ───────── 首屏:滚动驱动的远景 ───────── */
+.hero { position:relative; height:300vh; }
+.stage { position:sticky; top:0; height:100vh; overflow:hidden; }
+.frame { position:absolute; inset:0; }
+.frame video { width:100%; height:100%; display:block; object-fit:cover; }
+.fade { position:absolute; inset:0; background:#000; opacity:0; pointer-events:none; }
+.veil { position:absolute; inset:0; background:var(--veil); pointer-events:none; }
+
+.caption { position:absolute; top:96px; left:clamp(16px,4vw,56px); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  color:#f2eee8; display:flex; align-items:center; gap:10px; opacity:.9; }
+.caption .dot { width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 12px var(--accent); }
+.caption span { transition:opacity .4s; }
+
+.titleblock { position:absolute; left:clamp(16px,4vw,56px); right:clamp(16px,4vw,56px); bottom:clamp(40px,8vh,88px); color:#f4f0ea; }
+.kicker { font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin-bottom:18px; }
+.titleblock h1 { font-family:var(--display); font-weight:var(--display-weight); letter-spacing:var(--display-track);
+  font-size:clamp(56px,9vw,148px); line-height:.92; }
+.titleblock h1 em { font-style:italic; }
+.titleblock .sub { margin-top:20px; max-width:620px; font-size:clamp(15px,1.25vw,19px); line-height:1.5; color:rgba(244,240,234,.78); font-weight:300; }
+.row { display:flex; justify-content:space-between; align-items:flex-end; gap:32px; flex-wrap:wrap; }
+.stats { display:flex; gap:clamp(20px,3vw,48px); }
+.stat { opacity:0; transform:translateY(14px); transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+.stat.on { opacity:1; transform:none; }
+.stat b { display:block; font-family:var(--num); font-weight:500; font-size:clamp(26px,2.6vw,40px); letter-spacing:-.02em; }
+[data-theme="cinema"] .stat b, [data-theme="paper"] .stat b { font-family:var(--display); font-weight:400; font-size:clamp(32px,3.2vw,52px); }
+.stat small { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:rgba(244,240,234,.6); }
+.cta { display:flex; gap:10px; margin-top:28px; }
+.btn { font-size:13px; padding:10px 18px; border-radius:999px; border:1px solid rgba(244,240,234,.35); color:#f4f0ea; transition:all .2s; }
+.btn:hover { background:rgba(244,240,234,.1); }
+.btn.primary { background:var(--accent); border-color:var(--accent); color:#111; }
+
+.progress { position:absolute; left:clamp(16px,4vw,56px); right:clamp(16px,4vw,56px); bottom:22px; height:1px; background:rgba(244,240,234,.18); }
+.progress i { position:absolute; left:0; top:0; bottom:0; background:var(--accent); width:0; }
+.progress .tick { position:absolute; top:-14px; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:rgba(244,240,234,.5); transform:translateX(-50%); white-space:nowrap; }
+.scrollhint { position:absolute; right:clamp(16px,4vw,56px); bottom:40px; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:rgba(244,240,234,.6); transition:opacity .4s; }
+
+/* C:仿真仪表感 —— 取景框四角 + 时间码 + 等宽标签 */
+.hud { display:none; position:absolute; inset:0; pointer-events:none; }
+[data-theme="tech"] .hud { display:block; }
+.hud .cn { position:absolute; width:18px; height:18px; border:1px solid rgba(229,233,240,.55); }
+.hud .tl { top:84px; left:clamp(16px,4vw,56px); border-right:0; border-bottom:0; }
+.hud .tr { top:84px; right:clamp(16px,4vw,56px); border-left:0; border-bottom:0; }
+.hud .bl { bottom:14px; left:clamp(16px,4vw,56px); border-right:0; border-top:0; display:none; }
+.hud .br { bottom:14px; right:clamp(16px,4vw,56px); border-left:0; border-top:0; display:none; }
+.hud .tc { position:absolute; top:94px; right:calc(clamp(16px,4vw,56px) + 30px); font:500 11px/1 "JetBrains Mono", monospace; letter-spacing:.08em; color:rgba(229,233,240,.7); text-align:right; }
+.hud .tc b { color:var(--accent); font-weight:500; }
+[data-theme="tech"] .caption { top:94px; left:calc(clamp(16px,4vw,56px) + 30px); font-family:"JetBrains Mono", monospace; font-size:11px; letter-spacing:.08em; }
+[data-theme="tech"] .kicker, [data-theme="tech"] .eyebrow, [data-theme="tech"] .stat small, [data-theme="tech"] .progress .tick, [data-theme="tech"] .scrollhint, [data-theme="tech"] .lb th { font-family:"JetBrains Mono", monospace; letter-spacing:.06em; }
+[data-theme="tech"] .eyebrow::before { content:"[" attr(data-n) "]  "; color:var(--muted); }
+[data-theme="tech"] .titleblock h1 { letter-spacing:-.045em; }
+[data-theme="tech"] .btn { border-radius:4px; font-family:"JetBrains Mono", monospace; font-size:12px; letter-spacing:.04em; }
+[data-theme="tech"] .btn.primary { color:#06101a; }
+[data-theme="tech"] .seg, [data-theme="tech"] .seg button { border-radius:4px; }
+[data-theme="tech"] .lb td .heat { border-radius:1px; }
+
+/* 浅色期刊风:视频装进画框,文字在纸面上 */
+[data-theme="paper"] .frame { inset:84px clamp(16px,4vw,56px) 38vh; border-radius:3px; overflow:hidden; box-shadow:0 30px 60px -30px rgba(40,30,20,.35); }
+[data-theme="paper"] .titleblock { color:var(--text); bottom:clamp(36px,6vh,64px); }
+[data-theme="paper"] .titleblock h1 { font-size:clamp(48px,7vw,116px); }
+[data-theme="paper"] .titleblock .sub, [data-theme="paper"] .stat small { color:var(--muted); }
+[data-theme="paper"] .caption { top:108px; left:calc(clamp(16px,4vw,56px) + 20px); }
+[data-theme="paper"] .btn { color:var(--text); border-color:var(--line); }
+[data-theme="paper"] .btn.primary { color:#fff; }
+[data-theme="paper"] .progress { background:var(--line); }
+[data-theme="paper"] .progress .tick, [data-theme="paper"] .scrollhint { color:var(--muted); }
+
+/* ───────── 正文 ───────── */
+.wrap { max-width:1440px; margin:0 auto; padding:0 clamp(16px,4vw,56px); }
+section.block { padding:clamp(80px,12vh,140px) 0; border-top:1px solid var(--line); }
+.eyebrow { font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin-bottom:18px; }
+h2 { font-family:var(--display); font-weight:var(--display-weight); letter-spacing:var(--display-track); font-size:clamp(36px,4.4vw,64px); line-height:1.02; max-width:900px; }
+.lede { margin-top:22px; max-width:680px; color:var(--muted); font-size:17px; line-height:1.6; font-weight:300; }
+
+.statement { padding:clamp(90px,14vh,160px) 0 clamp(70px,10vh,120px); }
+.statement p { font-family:var(--display); font-weight:var(--display-weight); letter-spacing:var(--display-track);
+  font-size:clamp(28px,3.2vw,46px); line-height:1.2; max-width:1000px; }
+.statement p .m { color:var(--muted); }
+[data-theme="tech"] .statement p { font-weight:500; }
+
+/* 排行榜 */
+.lb-head { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:36px; }
+.seg { display:inline-flex; border:1px solid var(--line); border-radius:999px; padding:3px; gap:2px; }
+.seg button { font:inherit; font-size:13px; border:0; background:none; color:var(--muted); padding:7px 14px; border-radius:999px; cursor:pointer; transition:all .2s; }
+.seg button.on { background:var(--text); color:var(--bg); }
+.controls { display:flex; gap:10px; flex-wrap:wrap; }
+
+.tablebox { overflow-x:auto; border-top:1px solid var(--text); }
+table.lb { width:100%; table-layout:fixed; border-collapse:collapse; font-size:14px; min-width:760px; }
+.lb th { font-weight:500; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); text-align:right; padding:14px 10px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; user-select:none; }
+.lb th:first-child, .lb th:nth-child(2) { text-align:left; cursor:default; }
+.lb th.sorted { color:var(--text); }
+.lb th.sorted::after { content:" ↓"; }
+.lb th.grp { text-align:center; cursor:default; color:var(--text); border-bottom:1px solid var(--line); }
+.lb td { padding:0; border-bottom:1px solid var(--line); text-align:right; font-family:var(--num); font-variant-numeric:tabular-nums; }
+.lb td .c { padding:15px 10px; position:relative; }
+.lb td .heat { position:absolute; inset:6px 3px; border-radius:2px; background:rgba(var(--accent-rgb),var(--a)); z-index:0; transition:background .3s; }
+.lb td .bar { position:absolute; left:10px; right:10px; bottom:7px; height:2px; background:var(--line); z-index:1; }
+.lb td .bar i { position:absolute; right:0; top:0; bottom:0; background:var(--accent); }
+.lb td .best { color:var(--accent); }
+.lb td .v { position:relative; z-index:1; }
+.lb td .best { font-weight:600; }
+.lb td.rank { text-align:left; width:44px; color:var(--muted); padding-left:6px; font-size:12px; }
+.lb td.name { text-align:left; font-family:var(--body); }
+.lb td.name .c { display:flex; align-items:center; gap:10px; }
+.lb .sw { width:9px; height:9px; border-radius:2px; flex:none; }
+.lb .tag { font-size:10px; letter-spacing:.08em; color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:1px 5px; }
+.lb td.avg .v { font-weight:600; }
+.lb tr.data { cursor:pointer; transition:opacity .25s; }
+.lb.focus tr.data:not(.hl) { opacity:.32; }
+.lb tr.data:hover td { background:color-mix(in srgb, var(--text) 4%, transparent); }
+.lb tr.ghost td { color:var(--muted); font-family:var(--body); font-size:13px; }
+.lb tr.ghost td .c { padding:16px 10px; text-align:left; border:1px dashed var(--line); border-left:0; border-right:0; }
+.note { margin-top:16px; font-size:12px; color:var(--muted); line-height:1.6; }
+
+/* 泛化斜率图 */
+.gen { display:grid; grid-template-columns: 1.15fr 1fr; gap:56px; margin-top:72px; align-items:start; }
+.gen h3 { font-family:var(--display); font-weight:var(--display-weight); letter-spacing:var(--display-track); font-size:clamp(26px,2.6vw,36px); line-height:1.1; }
+.gen p { margin-top:14px; color:var(--muted); line-height:1.6; font-size:15px; font-weight:300; max-width:440px; }
+.ladder { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:28px; }
+.ladder figure { background:var(--bg2); border-radius:3px; overflow:hidden; aspect-ratio:1.25; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:outline .2s; outline:1px solid transparent; }
+.ladder figure.on { outline:1px solid var(--accent); }
+.ladder img { width:100%; height:100%; object-fit:contain; }
+.ladder figcaption { font-size:11px; letter-spacing:.12em; color:var(--muted); margin-top:8px; text-transform:uppercase; }
+svg.slope { width:100%; height:auto; overflow:visible; }
+svg.slope text { font-family:var(--body); fill:var(--muted); font-size:11px; }
+svg.slope .lab { font-size:12px; fill:var(--text); }
+svg.slope .grid { stroke:var(--line); }
+svg.slope path.l { fill:none; stroke-width:2; transition:opacity .25s, stroke-width .25s; }
+svg.slope .dim { opacity:.15; }
+
+footer { padding:60px 0 80px; color:var(--muted); font-size:12px; border-top:1px solid var(--line); }
+
+/* ───────── 方案切换面板(仅样稿用) ───────── */
+.picker { position:fixed; right:18px; bottom:18px; z-index:50; background:rgba(20,20,20,.88); color:#eee; backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:14px 16px; font:12px/1.4 "Inter", system-ui, sans-serif; width:240px; }
+.picker h4 { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:#999; font-weight:500; margin:0 0 8px; }
+.picker .opt { display:flex; flex-direction:column; gap:4px; margin-bottom:12px; }
+.picker label { display:flex; gap:8px; align-items:center; cursor:pointer; padding:3px 0; }
+.picker label:last-child { margin-bottom:0; }
+.picker .x { position:absolute; right:10px; top:8px; cursor:pointer; color:#888; }
+.picker.min .body { display:none; }
+
+/* ───────── 通用 ───────── */
+.sec-head { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:44px; }
+.mono { font-family:"JetBrains Mono", ui-monospace, monospace; }
+.chip { display:inline-flex; align-items:center; gap:6px; font:500 10px/1 "JetBrains Mono", monospace; letter-spacing:.06em; text-transform:uppercase;
+  padding:5px 7px; border-radius:3px; border:1px solid var(--line); color:var(--muted); }
+.ok { color:#7fd89b; } .bad { color:#ff8a7a; } .na { color:var(--muted); }
+
+/* ───────── [01] 仿真器对比 ───────── */
+.xsim { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.xs { background:var(--bg2); border:1px solid var(--line); border-radius:6px; overflow:hidden; display:flex; flex-direction:column; transition:border-color .3s; }
+.xs.ours { border-color:rgba(var(--accent-rgb),.55); box-shadow:0 0 0 1px rgba(var(--accent-rgb),.15), 0 20px 50px -30px rgba(var(--accent-rgb),.5); }
+.xs .vw { position:relative; aspect-ratio:4/3; background:#000; overflow:hidden; }
+.xs .vw video { width:100%; height:100%; object-fit:cover; display:block; }
+.xs .pending { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:20px;
+  background:repeating-linear-gradient(135deg, rgba(var(--accent-rgb),.06) 0 10px, transparent 10px 20px); color:var(--muted); font-size:12px; line-height:1.5; }
+.xs .pending b { color:var(--accent); font:500 11px/1 "JetBrains Mono", monospace; letter-spacing:.08em; }
+.xs .meta { padding:14px 14px 16px; display:flex; flex-direction:column; gap:12px; }
+.xs .nm { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.xs .nm b { font-weight:600; font-size:15px; }
+.xs .nm span { font:500 11px/1 "JetBrains Mono", monospace; color:var(--muted); }
+.xs .phases { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+.xs .ph { font:500 10px/1.2 "JetBrains Mono", monospace; letter-spacing:.04em; text-transform:uppercase; padding:7px 6px; border-radius:3px;
+  border:1px solid var(--line); color:var(--muted); text-align:center; transition:all .35s; }
+.xs .ph i { display:block; font-style:normal; font-size:14px; margin-top:4px; opacity:.25; transition:opacity .35s; }
+.xs .ph.lit i { opacity:1; }
+.xs .ph.lit.y { border-color:rgba(127,216,155,.45); color:#cfeedd; background:rgba(127,216,155,.06); }
+.xs .ph.lit.n { border-color:rgba(255,138,122,.45); color:#ffd2cb; background:rgba(255,138,122,.06); }
+.xs .score { display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid var(--line); padding-top:12px; }
+.xs .score b { font:500 22px/1 "JetBrains Mono", monospace; letter-spacing:-.02em; }
+.xs .score small { font-size:11px; color:var(--muted); }
+.xs .why { font-size:12px; color:var(--muted); line-height:1.45; min-height:34px; }
+
+.transport { display:flex; align-items:center; gap:16px; margin-top:18px; }
+.transport button { flex:none; width:36px; height:36px; border-radius:50%; border:1px solid var(--line); background:none; color:var(--text); cursor:pointer; font-size:12px; }
+.transport button:hover { border-color:var(--accent); color:var(--accent); }
+.track { position:relative; flex:1; height:36px; cursor:pointer; }
+.track .rail { position:absolute; left:0; right:0; top:17px; height:2px; background:var(--line); }
+.track .fill { position:absolute; left:0; top:17px; height:2px; background:var(--accent); width:0; }
+.track .knob { position:absolute; top:12px; width:12px; height:12px; border-radius:50%; background:var(--accent); transform:translateX(-50%); box-shadow:0 0 0 4px rgba(var(--accent-rgb),.18); }
+.track .mk { position:absolute; top:0; transform:translateX(-50%); font:500 10px/1 "JetBrains Mono", monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+.track .mk::after { content:""; position:absolute; left:50%; top:14px; width:1px; height:10px; background:var(--line); }
+.transport .t { font:500 11px/1 "JetBrains Mono", monospace; color:var(--muted); width:92px; text-align:right; }
+
+.loopcmp { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:96px; }
+.lc { position:relative; border-radius:6px; overflow:hidden; border:1px solid var(--line); background:#000; }
+.lc video { width:100%; display:block; aspect-ratio:16/9; object-fit:cover; }
+.lc .tag2 { position:absolute; left:14px; top:14px; display:flex; gap:8px; align-items:center; }
+.lc .res { position:absolute; left:14px; right:14px; bottom:12px; display:flex; justify-content:space-between; align-items:flex-end; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,.6); }
+.lc .res b { font:500 34px/1 "JetBrains Mono", monospace; letter-spacing:-.03em; }
+.lc .res span { font-size:12px; opacity:.85; max-width:60%; text-align:right; line-height:1.4; }
+.pill { font:600 10px/1 "JetBrains Mono", monospace; letter-spacing:.08em; padding:6px 8px; border-radius:3px; background:rgba(0,0,0,.55); color:#fff; backdrop-filter:blur(6px); }
+.pill.y { background:rgba(60,160,95,.85); } .pill.n { background:rgba(200,70,55,.85); }
+
+.friction { display:grid; grid-template-columns:1fr 1.1fr; gap:56px; margin-top:96px; align-items:center; }
+.friction h3, .assets-f h3, .s2r h3 { font-family:var(--display); font-weight:var(--display-weight); letter-spacing:var(--display-track); font-size:clamp(26px,2.6vw,36px); line-height:1.1; }
+.friction p, .assets-f p, .s2r p.d { margin-top:14px; color:var(--muted); line-height:1.6; font-size:15px; font-weight:300; max-width:460px; }
+.slider { margin-top:28px; }
+.slider label { display:flex; justify-content:space-between; font:500 11px/1 "JetBrains Mono", monospace; color:var(--muted); letter-spacing:.06em; margin-bottom:12px; }
+.slider label b { color:var(--text); font-weight:500; }
+input[type=range].rng { -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--line); outline:none; }
+input[type=range].rng::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--accent); cursor:pointer; box-shadow:0 0 0 5px rgba(var(--accent-rgb),.18); }
+input[type=range].rng::-moz-range-thumb { width:16px; height:16px; border:0; border-radius:50%; background:var(--accent); cursor:pointer; }
+.readout { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:24px; }
+.readout div { border:1px solid var(--line); border-radius:4px; padding:12px; }
+.readout small { display:block; font:500 10px/1.3 "JetBrains Mono", monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.readout b { display:block; margin-top:8px; font:500 20px/1 "JetBrains Mono", monospace; }
+svg.fric { width:100%; height:auto; overflow:visible; }
+svg.fric text { font-family:"JetBrains Mono", monospace; font-size:10px; fill:var(--muted); }
+svg.fric .grid { stroke:var(--line); }
+
+/* ───────── [02] 任务库 ───────── */
+.tasks { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.tk { position:relative; border-radius:6px; overflow:hidden; background:var(--bg2); border:1px solid var(--line); transition:border-color .25s, transform .25s; }
+.tk:hover { border-color:rgba(var(--accent-rgb),.6); }
+.tk .vw { position:relative; aspect-ratio:16/9; background:#000; cursor:ew-resize; overflow:hidden; }
+.tk video { width:100%; height:100%; object-fit:cover; display:block; }
+.tk .scrub { position:absolute; left:0; right:0; bottom:0; height:2px; background:rgba(255,255,255,.15); }
+.tk .scrub i { position:absolute; left:0; top:0; bottom:0; background:var(--accent); width:0; }
+.tk .idx { position:absolute; left:12px; top:12px; font:500 11px/1 "JetBrains Mono", monospace; color:rgba(255,255,255,.85); letter-spacing:.06em; text-shadow:0 1px 8px rgba(0,0,0,.6); }
+.tk .hint2 { position:absolute; right:12px; top:12px; font:500 10px/1 "JetBrains Mono", monospace; color:rgba(255,255,255,.7); letter-spacing:.06em; opacity:0; transition:opacity .25s; }
+.tk:hover .hint2 { opacity:1; }
+.tk .body { padding:16px 16px 18px; }
+.tk h4 { font-family:var(--display); font-weight:var(--display-weight); letter-spacing:var(--display-track); font-size:22px; }
+.tk .rg { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+.tk .rg .chip.on { color:var(--accent); border-color:rgba(var(--accent-rgb),.5); }
+.tk .crit { margin-top:12px; font-size:13px; line-height:1.5; color:var(--muted); }
+.legend { display:flex; gap:18px; flex-wrap:wrap; margin-top:22px; font-size:12px; color:var(--muted); }
+.legend b { font:500 10px/1 "JetBrains Mono", monospace; color:var(--accent); margin-right:6px; }
+
+/* ───────── [03] 资产 ───────── */
+.rack { position:relative; margin-top:8px; border-radius:6px; overflow:hidden; border:1px solid var(--line); background:#d9d9d9; }
+.rack img { width:100%; display:block; transform:scale(1.04); transition:transform 1.2s cubic-bezier(.2,.7,.2,1); }
+.rack:hover img { transform:scale(1.07); }
+.rack .cap { position:absolute; left:16px; bottom:14px; display:flex; gap:8px; }
+.counters { display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin-top:36px; }
+.counters div { padding:22px 18px; border-right:1px solid var(--line); }
+.counters div:last-child { border-right:0; }
+.counters b { display:block; font:500 clamp(26px,2.8vw,40px)/1 "JetBrains Mono", monospace; letter-spacing:-.03em; }
+.counters small { display:block; margin-top:10px; font-size:12px; color:var(--muted); }
+.assets-f { display:grid; grid-template-columns:1fr 1.2fr; gap:56px; margin-top:96px; align-items:center; }
+.factor-tabs { display:flex; flex-direction:column; gap:0; margin-top:28px; border-top:1px solid var(--line); }
+.ft { padding:16px 0; border-bottom:1px solid var(--line); cursor:pointer; display:grid; grid-template-columns:28px 1fr; gap:4px 10px; }
+.ft .n { font:500 11px/1.6 "JetBrains Mono", monospace; color:var(--muted); }
+.ft b { font-weight:500; font-size:15px; }
+.ft p { grid-column:2; margin:0; font-size:13px; color:var(--muted); line-height:1.5; max-height:0; overflow:hidden; transition:max-height .4s, margin .4s; }
+.ft.on b { color:var(--accent); }
+.ft.on p { max-height:80px; margin-top:6px; }
+.stage2 { position:relative; aspect-ratio:1.15; border-radius:6px; background:radial-gradient(70% 60% at 50% 55%, color-mix(in srgb, var(--text) 7%, transparent), transparent 70%), var(--bg2); border:1px solid var(--line); overflow:hidden; }
+.stage2 .card { position:absolute; left:50%; top:46%; width:58%; transform-origin:50% 120%; transition:transform .7s cubic-bezier(.2,.7,.2,1), opacity .5s, filter .5s; cursor:pointer; }
+.stage2 .card img { width:100%; display:block; filter:drop-shadow(0 22px 30px rgba(0,0,0,.45)); }
+.stage2 .sw2 { position:absolute; left:0; right:0; bottom:16px; display:flex; justify-content:center; gap:8px; }
+.stage2 .sw2 button { width:28px; height:28px; border-radius:50%; border:1px solid var(--line); background:var(--bg); color:var(--muted); font:500 10px/1 "JetBrains Mono", monospace; cursor:pointer; }
+.stage2 .sw2 button.on { border-color:var(--accent); color:var(--accent); }
+.stage2 .fixed { position:absolute; left:16px; top:16px; display:flex; gap:6px; flex-wrap:wrap; }
+.stage2 .which { position:absolute; right:16px; top:16px; display:flex; gap:4px; }
+
+/* ───────── [05] 仿真到真机 ───────── */
+.s2r { display:grid; grid-template-columns:0.9fr 1.3fr; gap:48px; align-items:start; }
+svg.sc { width:100%; height:auto; overflow:visible; margin-top:24px; }
+svg.sc text { font-family:"JetBrains Mono", monospace; font-size:10px; fill:var(--muted); }
+svg.sc .grid { stroke:var(--line); }
+svg.sc .pt { cursor:pointer; }
+svg.sc .pt circle.halo { fill:rgba(var(--accent-rgb),.0); transition:fill .25s; }
+svg.sc .pt.on circle.halo { fill:rgba(var(--accent-rgb),.22); }
+svg.sc .pt text.l { fill:var(--text); font-family:var(--body); font-size:12px; }
+.pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.pair .pv { position:relative; border-radius:6px; overflow:hidden; border:1px solid var(--line); background:#000; }
+.pair video { width:100%; display:block; aspect-ratio:16/9; object-fit:cover; }
+.pair .pv .pill { position:absolute; left:12px; top:12px; }
+.pair .pv .cnt { position:absolute; right:12px; bottom:10px; color:#fff; font:500 13px/1 "JetBrains Mono", monospace; text-shadow:0 1px 10px rgba(0,0,0,.7); }
+.taskpick { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.taskpick button { font:500 11px/1 "JetBrains Mono", monospace; letter-spacing:.04em; padding:8px 10px; border-radius:4px; border:1px solid var(--line); background:none; color:var(--muted); cursor:pointer; }
+.taskpick button.on { color:var(--bg); background:var(--text); border-color:var(--text); }
+.bigrho { display:flex; align-items:baseline; gap:12px; margin-top:20px; }
+.bigrho b { white-space:nowrap; font:500 clamp(34px,3.6vw,54px)/1 "JetBrains Mono", monospace; letter-spacing:-.04em; color:var(--accent); }
+.bigrho span { color:var(--muted); font-size:13px; line-height:1.4; }
+
+/* 滚动淡入 */
+.rv { opacity:0; transform:translateY(24px); transition:opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); }
+.rv.in { opacity:1; transform:none; }
+
+@media (max-width: 980px) {
+  .xsim { grid-template-columns:repeat(2,1fr); }
+  .tasks { grid-template-columns:repeat(2,1fr); }
+  .friction, .assets-f, .s2r { grid-template-columns:1fr; gap:32px; }
+}
+@media (max-width: 620px) {
+  .xsim, .tasks, .loopcmp, .pair { grid-template-columns:1fr; }
+  .counters { grid-template-columns:repeat(2,1fr); }
+  .counters div:nth-child(2) { border-right:0; }
+}
+
+@media (max-width: 760px) {
+  .nav .links { display:none; }
+  .gen { grid-template-columns:1fr; gap:36px; }
+  .stats { gap:18px; }
+  .caption { top:80px; }
+  [data-theme="paper"] .frame { inset:72px 16px 46vh; }
+}
+@media (prefers-reduced-motion: reduce) { .stat { transition:none; } }
+/* ───────── v3:任务播放器 / 资产三因素 / 两个评测维度 / 仿真到真机 / 页脚 ───────── */
+section.block.first { border-top:0; }
+.player { display:flex; flex-direction:column; gap:12px; }
+.pvw { position:relative; aspect-ratio:16/9; border-radius:8px; overflow:hidden; background:#000; border:1px solid var(--line); cursor:ew-resize; }
+.pvw video { width:100%; height:100%; object-fit:cover; display:block; }
+.pveil { position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,.72) 100%); pointer-events:none; }
+.pinfo { position:absolute; left:28px; bottom:30px; right:28px; color:#fff; pointer-events:none; }
+.pinfo .pidx { font-size:11px; letter-spacing:.08em; color:var(--accent); }
+.pinfo h3 { font-family:var(--display); font-weight:var(--display-weight); letter-spacing:var(--display-track); font-size:clamp(30px,3.4vw,48px); line-height:1; margin-top:10px; }
+.pinfo .rg { display:flex; gap:6px; margin-top:14px; }
+.pinfo .rg .chip { border-color:rgba(255,255,255,.25); color:rgba(255,255,255,.55); }
+.pinfo .rg .chip.on { color:var(--accent); border-color:rgba(var(--accent-rgb),.7); background:rgba(0,0,0,.25); }
+.pinfo p { margin-top:12px; max-width:560px; font-size:14px; line-height:1.5; color:rgba(255,255,255,.8); }
+.pvw .hint2 { position:absolute; right:20px; top:18px; font-size:10px; letter-spacing:.08em; color:rgba(255,255,255,.7); opacity:0; transition:opacity .25s; }
+.pvw:hover .hint2 { opacity:1; }
+.pbar { position:absolute; left:0; right:0; bottom:0; height:3px; background:rgba(255,255,255,.12); }
+.pbar i { position:absolute; left:0; top:0; bottom:0; width:0; background:var(--accent); }
+.strip { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
+.sth { position:relative; border-radius:5px; overflow:hidden; border:1px solid var(--line); cursor:pointer; background:var(--bg2); transition:border-color .25s, opacity .25s; opacity:.55; }
+.sth:hover { opacity:.9; }
+.sth.on { opacity:1; border-color:rgba(var(--accent-rgb),.7); }
+.sth img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
+.sth span { display:block; padding:8px 10px 10px; font-size:12px; font-weight:500; }
+.sth span small { display:block; font:500 10px/1 "JetBrains Mono", monospace; color:var(--muted); margin-bottom:5px; letter-spacing:.06em; }
+.sth i { position:absolute; left:0; top:0; height:2px; width:0; background:var(--accent); }
+
+.rack { margin-top:8px; border-radius:8px; }
+.factors3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:36px; }
+.f3 { border:1px solid var(--line); border-radius:6px; padding:20px; background:var(--bg2); }
+.f3 .n { font-size:11px; color:var(--accent); }
+.f3 b { display:block; margin-top:10px; font-size:18px; font-weight:600; }
+.f3 p { margin-top:8px; font-size:13px; line-height:1.5; color:var(--muted); min-height:40px; }
+.f3 .kv { margin-top:16px; padding-top:12px; border-top:1px solid var(--line); font-size:12px; color:var(--text); }
+.f3 .kv small { display:block; font:500 10px/1 "JetBrains Mono", monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+
+.axes { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.axis { border:1px solid var(--line); border-radius:8px; background:var(--bg2); padding:18px; display:flex; flex-direction:column; gap:14px; }
+.axh { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.axh .n { display:block; font-size:10px; letter-spacing:.08em; color:var(--accent); margin-bottom:6px; }
+.axh b { font-size:16px; font-weight:600; }
+.axf { display:flex; gap:6px; flex-wrap:wrap; }
+.axis .ladder { margin-top:0; aspect-ratio:auto; height:300px; grid-template-columns:repeat(3,1fr); }
+.axis .ladder > div { display:flex; flex-direction:column; }
+.axis .ladder figure { flex:1; aspect-ratio:auto; background:radial-gradient(60% 55% at 50% 55%, color-mix(in srgb, var(--text) 7%, transparent), transparent 70%); }
+.axis .ladder img { padding:12px; }
+.axis .stage2 { aspect-ratio:auto; height:300px; border:0; background:radial-gradient(60% 55% at 50% 50%, color-mix(in srgb, var(--text) 7%, transparent), transparent 70%); }
+.axis .stage2 .card { width:46%; top:44%; }
+.gen { margin-top:90px; grid-template-columns:1fr 1.15fr; }
+
+.s2r { grid-template-columns:1.12fr .88fr; gap:40px; align-items:stretch; }
+.s2l { display:flex; flex-direction:column; }
+.s2l svg.sc { margin-top:18px; }
+.clickhint { margin-top:6px; font-size:10px; letter-spacing:.08em; color:var(--muted); }
+.clickhint::first-letter { color:var(--accent); }
+.s2rr .pair { grid-template-columns:1fr; gap:10px; }
+svg.sc .pt { cursor:pointer; }
+svg.sc .pt .dot { transition:r .2s, fill .2s, fill-opacity .2s; }
+svg.sc .pt:hover .dot { fill:var(--text); fill-opacity:1; }
+svg.sc .pt:hover text.l { fill:var(--text); }
+svg.sc .pt text.l { fill:var(--muted); transition:fill .2s; }
+svg.sc .pt.on text.l { fill:var(--accent); font-weight:600; }
+svg.sc .ring { fill:none; stroke:var(--accent); stroke-opacity:.5; transform-box:fill-box; transform-origin:center; animation:ring 2.2s ease-out infinite; }
+@keyframes ring { from { stroke-opacity:.7; transform:scale(.6); } to { stroke-opacity:0; transform:scale(1.9); } }
+
+footer .foot { display:grid; grid-template-columns:1fr 1.3fr; gap:40px; align-items:start; }
+.bib { font-size:11px; line-height:1.6; color:var(--muted); background:var(--bg2); border:1px solid var(--line); border-radius:6px; padding:16px; overflow-x:auto; white-space:pre; }
+
+@media (max-width: 980px) {
+  .strip { grid-template-columns:repeat(3,1fr); }
+  .axes, .factors3, .s2r, footer .foot { grid-template-columns:1fr; }
+  .pinfo { left:16px; right:16px; bottom:18px; } .pinfo p { display:none; }
+}
+
+/* ───────── 适配:平板 / 手机竖屏 / 手机横屏 ───────── */
+.seg button { white-space:nowrap; }
+@media (max-width: 760px) {
+  .picker { display:none; }
+  .gen { grid-template-columns:1fr; gap:28px; margin-top:64px; }
+  .lb-head { flex-direction:column; align-items:flex-start; gap:16px; }
+  .lb-head .controls { flex-wrap:wrap; gap:8px; }
+  table.lb { min-width:660px; font-size:13px; }
+  .lb th { white-space:normal; line-height:1.35; vertical-align:bottom; }
+  .lb col:nth-child(1) { width:30px !important; }
+  .lb col:nth-child(2) { width:118px !important; }
+  .lb td.rank, .lb th:first-child { position:sticky; left:0; background:var(--bg); z-index:2; padding-left:2px; }
+  .lb td.name, .lb th:nth-child(2) { position:sticky; left:30px; background:var(--bg); z-index:2; box-shadow:6px 0 8px -6px rgba(0,0,0,.6); }
+  .lb td.name .tag { display:none; }
+  .lb th { padding:12px 6px; font-size:10px; }
+  .lb td .c { padding:13px 6px; }
+  .tablebox::after { content:"← swipe →"; display:block; text-align:right; font:500 10px/1 "JetBrains Mono", monospace; letter-spacing:.08em; color:var(--muted); padding:8px 0 0; }
+  svg.slope text { font-size:15px; }
+  svg.fric text { font-size:14px; }
+  .axis .ladder, .axis .stage2 { height:240px; }
+  .s2rr .taskpick { flex-wrap:wrap; }
+}
+@media (max-width: 620px) {
+  .hud .tc { display:none; }
+  .strip { gap:6px; }
+  .sth span { padding:6px 7px 8px; font-size:11px; }
+  .axh { flex-wrap:wrap; }
+  .bigrho b { font-size:40px; }
+  footer .foot { gap:20px; }
+}
+@media (max-width: 1100px) {
+  .lb th { white-space:normal; line-height:1.35; vertical-align:bottom; }
+}
+/* 手机横屏:高度很矮 */
+@media (max-height: 500px) and (orientation: landscape) {
+  .picker, .hud, .caption, .kicker, .scrollhint, .progress .tick { display:none; }
+  .nav .links { display:none; }
+  .titleblock { bottom:24px; }
+  .titleblock h1 { font-size:44px; }
+  .titleblock .sub { margin-top:8px; font-size:13px; max-width:460px; }
+  .titleblock .btns, .titleblock .cta { margin-top:12px; }
+  .pvw { max-height:calc(100vh - 80px); aspect-ratio:auto; height:calc(100vh - 80px); }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <a class="mark" href="#">FabricBench</a>
+  <div class="links"><a href="#tasks">Tasks</a><a href="#assets">Assets</a><a href="#simulator">Simulator</a><a href="#leaderboard">Leaderboard</a><a href="#sim2real">Sim-to-real</a><a href="#">Paper</a></div>
+</nav>
+
+<header class="hero" id="hero">
+  <div class="stage">
+    <div class="frame"><video id="vid" muted playsinline autoplay preload="auto" poster="assets/video/hero_poster.jpg"></video><div class="fade" id="fade"></div><div class="veil"></div></div>
+    <div class="hud"><i class="cn tl"></i><i class="cn tr"></i><i class="cn bl"></i><i class="cn br"></i>
+      <div class="tc"><b>●</b> REC &nbsp;<span id="tc">00:00.0 / 00:34.0</span></div></div>
+    <div class="caption"><i class="dot"></i><span id="cap">Fold T-shirt · single episode</span></div>
+
+    <div class="titleblock">
+      <div class="kicker">A benchmark for bimanual fabric manipulation</div>
+      <div class="row">
+        <div>
+          <h1>FabricBench</h1>
+          <p class="sub">A standardized policy benchmark for bimanual fabric manipulation, built on a contact-driven deformable simulator.</p>
+          <div class="cta"><a class="btn primary" href="#leaderboard">Leaderboard</a><a class="btn" href="#">Paper</a><a class="btn" href="#">Code</a></div>
+        </div>
+        <div class="stats" id="stats">
+          <div class="stat"><b>6</b><small>Tasks</small></div>
+          <div class="stat"><b>10,000</b><small>Assets</small></div>
+          <div class="stat"><b>6</b><small>Policies</small></div>
+          <div class="stat"><b>45/45</b><small>Grasp–hold–release</small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scrollhint" id="hint">Scroll ↓</div>
+    <div class="progress"><i id="bar"></i></div>
+  </div>
+</header>
+
+<main>
+  <!-- ═════════ [01] 任务 ═════════ -->
+  <section class="block first" id="tasks">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <div>
+          <div class="eyebrow" data-n="01">Tasks</div>
+          <h2>Six bimanual tasks across garments, silk and bags.</h2>
+          <p class="lede">From long-horizon folding to carrying a loaded bag. Success is outcome-based: any behavior that reaches the target state earns credit.</p>
+        </div>
+      </div>
+      <div class="player rv" id="player">
+        <div class="pvw" id="pvw"><video id="pvid" muted playsinline preload="auto"></video>
+          <div class="pveil"></div>
+          <div class="pinfo"><div class="pidx mono" id="pIdx">T1 / 6</div><h3 id="pName">Fold T-shirt</h3><div class="rg" id="pRg"></div><p id="pCrit"></p></div>
+          <span class="hint2 mono">HOVER ← SCRUB →</span>
+          <div class="pbar"><i id="pBar"></i></div>
+        </div>
+        <div class="strip" id="strip"></div>
+      </div>
+      <div class="legend rv">
+        <span><b>SC</b>self-contact</span><span><b>CR</b>recovery under occlusion</span><span><b>MT</b>momentum transfer</span><span><b>FH</b>friction-limited hold</span><span><b>VB</b>volumetric bag load</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════ [02] 资产 ═════════ -->
+  <section class="block" id="assets">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <div>
+          <div class="eyebrow" data-n="02">Assets</div>
+          <h2>10,000 simulation-ready assets, each rebuilt from a seed.</h2>
+          <p class="lede">Generative meshes are double-layered, fragmented and atlas-packed — unusable as cloth. We expand clean templates instead, varying geometry, appearance and physics one at a time.</p>
+        </div>
+      </div>
+      <div class="rack rv"><img src="assets/assets/rack.webp" alt="Garments and bags rendered in Omniverse Kit">
+        <div class="cap"><span class="pill">Omniverse Kit render</span><span class="pill">garments · bags</span></div></div>
+      <div class="counters rv">
+        <div><b data-count="10000">0</b><small>expanded assets</small></div>
+        <div><b data-count="3">0</b><small>independent factors</small></div>
+        <div><b data-count="50">0</b><small>held-out appearance variants</small></div>
+        <div><b>100%</b><small>pass the same stability check</small></div>
+      </div>
+      <div class="factors3 rv">
+        <div class="f3"><span class="n mono">A</span><b>Appearance</b><p>Render materials and printed patterns.</p><div class="kv"><small>held fixed</small>geometry · rest pattern · material</div></div>
+        <div class="f3"><span class="n mono">M</span><b>Morphology</b><p>Semantic regions deform; the rest pattern is rebuilt under seam-length constraints.</p><div class="kv"><small>held fixed</small>appearance recipe · material</div></div>
+        <div class="f3"><span class="n mono">P</span><b>Material</b><p>Density, thickness, anisotropic stretch, shear, bending, damping, friction.</p><div class="kv"><small>held fixed</small>geometry · rest pattern · appearance</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════ [03] 仿真器 ═════════ -->
+  <section class="block" id="simulator">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <div>
+          <div class="eyebrow" data-n="03">Simulator</div>
+          <h2>Grasp, hold and release arise from contact forces alone.</h2>
+          <p class="lede">No attachment rules, no adhesion, no filtered trajectories — so the score measures the policy, not the simulator. The same recorded dual-arm grasp is replayed at 15 placements, three times each; success requires grasp, hold <em>and</em> release.</p>
+        </div>
+      </div>
+
+      <div class="xsim rv" id="xsim"></div>
+      <div class="transport rv">
+        <button id="xsPlay" aria-label="play/pause">❚❚</button>
+        <div class="track" id="xsTrack"><div class="rail"></div><div class="fill" id="xsFill"></div><div class="knob" id="xsKnob"></div></div>
+        <div class="t" id="xsT">00.0 / 12.5 s</div>
+      </div>
+
+      <div class="loopcmp rv">
+        <div class="lc"><video src="assets/sim/attach.mp4" muted playsinline loop autoplay></video>
+          <div class="tag2"><span class="pill n">FAIL</span><span class="pill">Threshold attach–detach</span></div>
+          <div class="res"><b>9/50</b><span>Small gripper-command fluctuations trigger detachment — the fabric drops mid-grasp.</span></div></div>
+        <div class="lc"><video src="assets/sim/ours.mp4" muted playsinline loop autoplay></video>
+          <div class="tag2"><span class="pill y">SUCCESS</span><span class="pill">Contact-driven grasp · ours</span></div>
+          <div class="res"><b>19/50</b><span>Same Diffusion Policy checkpoint on Lift silk. Attach rules underestimate the policy.</span></div></div>
+      </div>
+
+      <div class="friction rv">
+        <div>
+          <div class="eyebrow" data-n="03·b">Friction with a true static regime</div>
+          <h3>Regularized friction always creeps. Anchored friction holds.</h3>
+          <p>Released cloth stacks replace stick with a velocity ramp, so a grasp loaded to a fraction ρ of the Coulomb cone slides at v = ε(1 − √(1 − ρ)). Holding then needs an inflated μ — which locks fabric on the finger at release. Our anchored contact keeps v = 0 until ρ reaches 1.</p>
+          <div class="slider">
+            <label><span>LOAD RATIO ρ = ‖f<sub>t</sub>‖ / μ f<sub>n</sub></span><b id="rhoV">0.60</b></label>
+            <input class="rng" id="rho" type="range" min="0" max="1" step="0.01" value="0.6">
+          </div>
+          <div class="readout">
+            <div><small>Regularized (released)</small><b class="bad" id="vReg">0.37 ε</b></div>
+            <div><small>Anchored (ours)</small><b class="ok" id="vOurs">0 · stick</b></div>
+          </div>
+        </div>
+        <svg class="fric" id="fric" viewBox="0 0 520 360"></svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════ [04] 评测:两个维度 + 排行榜 ═════════ -->
+  <section class="block" id="leaderboard">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <div>
+          <div class="eyebrow" data-n="04">Evaluation</div>
+          <h2>Two controlled axes. One factor at a time.</h2>
+          <p class="lede">On the flattening tasks, the configuration ladder changes only how the cloth starts; appearance variants change only color and texture. Asset, camera and placement stay matched, 50 fixed-seed episodes per cell.</p>
+        </div>
+      </div>
+      <div class="axes rv">
+        <div class="axis">
+          <div class="axh"><div><span class="mono n">AXIS 1</span><b>Configuration ladder · C0 → C2</b></div>
+            <div class="seg" id="segTask"><button data-t="tshirt" class="on">T-shirt</button><button data-t="silk">Silk</button></div></div>
+          <div class="ladder" id="ladder"></div>
+          <div class="axf"><span class="chip">asset · fixed</span><span class="chip">appearance · fixed</span><span class="chip">placement · fixed</span></div>
+        </div>
+        <div class="axis">
+          <div class="axh"><div><span class="mono n">AXIS 2</span><b>Appearance variants · 50 held-out</b></div>
+            <div class="seg" id="fanWhich"><button data-w="silk" class="on">Silk</button><button data-w="tshirt">T-shirt</button></div></div>
+          <div class="stage2" id="fan"><div class="sw2" id="fanSw"></div></div>
+          <div class="axf"><span class="chip">geometry · fixed</span><span class="chip">physics · fixed</span><span class="chip">initial state · C0</span></div>
+        </div>
+      </div>
+
+      <div class="lb-head rv" style="margin-top:110px">
+        <div>
+          <div class="eyebrow" data-n="04·b">Leaderboard</div>
+          <h2>Six policies, six tasks.</h2>
+        </div>
+        <div class="controls">
+          <div class="seg" id="segView"><button data-v="std" class="on">Standard</button><button data-v="gen">Generalization</button></div>
+          <div class="seg" id="segMetric"><button data-m="sr" class="on">Success rate</button><button data-m="score">Score</button></div>
+        </div>
+      </div>
+      <div class="tablebox rv"><table class="lb" id="lb"></table></div>
+      <div class="note" id="lbnote"></div>
+      <a class="btn" id="fullLb" href="leaderboard.html" style="display:none;margin-top:18px">Full leaderboard →</a>
+      <script>/* 排行榜页暂未上线:只在本地打开时显示入口 */ if (location.protocol === "file:") document.getElementById("fullLb").style.display = "inline-block";</script>
+
+      <div class="gen rv">
+        <div>
+          <div class="eyebrow" data-n="04·c">Finding</div>
+          <h3>Policies break as the cloth starts more deformed — more than under any appearance shift.</h3>
+          <p>On Flatten T-shirt every policy falls to 6–14% at C2, a drop of 58–78 points, versus 2–50 points under appearance shift. On Flatten silk no policy exceeds 2% at C2. Use the axis toggle above to switch task; click a policy to highlight it.</p>
+        </div>
+        <div><svg class="slope" id="slope" viewBox="0 0 520 420"></svg></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════ [05] 仿真到真机 ═════════ -->
+  <section class="block" id="sim2real">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <div>
+          <div class="eyebrow" data-n="05">Sim-to-real</div>
+          <h2>Hard in simulation, hard on the real robot.</h2>
+          <p class="lede">π0.5 checkpoints trained only on simulated demonstrations are deployed zero-shot on the real dual-arm Piper, 20 trials per task, with the camera placed as in simulation.</p>
+        </div>
+      </div>
+      <div class="s2r rv">
+        <div class="s2l">
+          <div class="bigrho"><b>ρ = 0.94</b><span>Spearman rank correlation of<br>task difficulty, sim vs. real</span></div>
+          <svg class="sc" id="scatter" viewBox="0 0 660 600"></svg>
+          <div class="clickhint mono">● CLICK A POINT TO COMPARE</div>
+        </div>
+        <div class="s2rr">
+          <div class="taskpick" id="s2rPick"></div>
+          <div class="pair">
+            <div class="pv"><video id="pvSim" muted playsinline loop autoplay></video><span class="pill">SIMULATION</span><span class="cnt" id="cSim"></span></div>
+            <div class="pv"><video id="pvReal" muted playsinline loop autoplay></video><span class="pill">REAL ROBOT</span><span class="cnt" id="cReal"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap foot">
+      <div><div class="mark" style="font-family:var(--display);font-size:22px;font-weight:var(--display-weight);letter-spacing:var(--display-track);color:var(--text)">FabricBench</div>
+        <p style="margin-top:10px">Internal preview · 2026 · simulator, assets, demonstrations and evaluation code to be released.</p></div>
+      <pre class="bib mono">@inproceedings{fabricbench2027,
+  title  = {FabricBench: A Standardized Policy Benchmark for Bimanual
+            Fabric Manipulation with a Contact-Driven Deformable Simulator},
+  author = {...},
+  year   = {2027}
+}</pre>
+    </div>
+  </footer>
+</main>
+
+
+<div class="picker" id="picker">
+  <span class="x" id="pmin">–</span>
+  <div class="body">
+    <h4>整体风格</h4>
+    <div class="opt">
+      <label><input type="radio" name="theme" value="cinema"> A · 暗色电影感(衬线)</label>
+      <label><input type="radio" name="theme" value="paper"> B · 浅色期刊感(画框)</label>
+      <label><input type="radio" name="theme" value="tech" checked> C · 暗色科技感(推荐)</label>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ════════ 数据(论文 Table main / Table shift) ════════ */
+const TASKS = ["Lift silk","Flatten silk","Flatten T-shirt","Carry bag","Pack snack","Fold T-shirt"];
+const POL = [
+  {n:"π0.5",      t:"VLA", c:"#e4a853", sr:[98,86,82,66,92,36], sc:[98.0,94.5,82.4,82.5,97.0,63.6],
+   g:{tshirt:{sr:[82,44,12,76],sc:[82.4,73.4,35.7,80.3]}, silk:{sr:[86,20,2,64],sc:[94.5,60.4,42.2,85.3]}}},
+  {n:"LingBot-VA",t:"WAM", c:"#6fb7a8", sr:[66,86,86,50,98,36], sc:[78.0,97.0,83.0,70.0,98.8,57.6],
+   g:{tshirt:{sr:[86,62,10,84],sc:[83.0,73.5,28.2,77.1]}, silk:{sr:[86,22,0,86],sc:[97.0,61.6,40.4,97.0]}}},
+  {n:"Fast-WAM",  t:"WAM", c:"#8aa4e8", sr:[58,64,92,80,8,0],   sc:[78.0,87.2,81.6,85.5,12.4,22.8],
+   g:{tshirt:{sr:[92,34,14,42],sc:[81.6,71.8,27.9,64.1]}, silk:{sr:[64,16,0,0],sc:[87.2,70.7,43.1,74.8]}}},
+  {n:"GR00T",     t:"VLA", c:"#d77a6a", sr:[70,46,72,40,54,2],  sc:[79.0,80.4,76.9,58.5,81.4,24.2],
+   g:{tshirt:{sr:[72,34,14,58],sc:[76.9,62.9,31.1,69.2]}, silk:{sr:[46,18,0,38],sc:[80.4,71.0,44.6,77.8]}}},
+  {n:"ACT",       t:"IL",  c:"#b59bd6", sr:[28,10,70,38,52,30], sc:[62.0,70.3,79.6,62.5,80.0,54.4],
+   g:{tshirt:{sr:[70,16,6,28],sc:[79.6,36.1,25.8,59.1]}, silk:{sr:[10,6,0,4],sc:[70.3,60.5,43.4,65.5]}}},
+  {n:"DP",        t:"IL",  c:"#9a958c", sr:[38,0,78,8,18,0],    sc:[44.0,57.3,78.8,27.0,53.2,16.2],
+   g:{tshirt:{sr:[78,32,10,50],sc:[78.8,62.9,26.5,70.4]}, silk:{sr:[0,0,0,0],sc:[57.3,55.8,41.7,53.1]}}},
+];
+const LADDER = {
+  tshirt:["assets/ladder/tshirt_c0.png","assets/ladder/tshirt_c1.png","assets/ladder/tshirt_c2.png"],
+  silk:["assets/ladder/silk_c0.png","assets/ladder/silk_c1.png","assets/ladder/silk_c2.png"],
+};
+
+/* ════════ 首屏:原生视频自动播放(30fps)+ 滚动快进 + 淡入淡出循环 ════════ */
+const vid = document.getElementById("vid"), fade = document.getElementById("fade");
+vid.src = (innerWidth*(devicePixelRatio||1) > 1400) ? "assets/video/hero_1080.mp4" : "assets/video/hero_720.mp4";
+const hero = document.getElementById("hero"), bar = document.getElementById("bar"), cap = document.getElementById("cap");
+const stats = [...document.querySelectorAll(".stat")], hint = document.getElementById("hint"), nav = document.getElementById("nav");
+const hud = document.getElementById("tc");
+// 原片时间点(秒):0–14 叠T恤,14–20 装袋,~20 开始拉远,22 之后全场
+const T_BAG = 14, T_PULL = 20, FADE = 0.7;
+let LEN = 34, scrub = false, a0 = 0, raf = 0;
+vid.addEventListener("loadedmetadata", ()=>{ LEN = vid.duration; progressTicks(); });
+
+function progressTicks(){
+  const p = document.querySelector(".progress"); p.querySelectorAll(".tick").forEach(e=>e.remove());
+  for (const [x,t] of [[0,"Single episode"],[T_PULL/LEN,"Parallel evaluation"]]){ const e=document.createElement("span"); e.className="tick"; e.style.left=(x*100)+"%"; e.textContent=t; if(x===0) e.style.transform="none"; p.appendChild(e); }
+}
+const fmtT = t => `${String(Math.floor(t/60)).padStart(2,"0")}:${(t%60).toFixed(1).padStart(4,"0")}`;
+
+function heroP(){ const r = hero.getBoundingClientRect(), span = hero.offsetHeight - innerHeight; return Math.min(1, Math.max(0, -r.top/span)); }
+
+let p0 = 0, restP = 0, idle = 0;
+function onScroll(){
+  if (raf) return;
+  raf = requestAnimationFrame(()=>{ raf = 0;
+    const p = heroP();
+    if (p < 1) {
+      // 一次滚动手势开始:以当前画面为锚点
+      if (!scrub) { scrub = true; a0 = vid.currentTime; p0 = restP; vid.pause(); }
+      // 往下滚:从锚点快进到片尾;往上滚:从锚点倒退到片头
+      let t = p >= p0 ? a0 + (LEN - 0.05 - a0) * (p - p0) / Math.max(1e-3, 1 - p0)
+                      : a0 * p / Math.max(1e-3, p0);
+      t = Math.min(LEN - 0.05, Math.max(0, t));
+      if (Math.abs(vid.currentTime - t) > 0.02) vid.currentTime = t;
+    }
+    // 手停 0.2 秒:从当前画面接着正常播放
+    clearTimeout(idle);
+    idle = setTimeout(()=>{ scrub = false; restP = heroP(); if (restP < 1) vid.play().catch(()=>{}); }, 200);
+    nav.classList.toggle("solid", hero.getBoundingClientRect().bottom < 80);
+    hint.style.opacity = p > 0.02 ? 0 : 1;
+  });
+}
+// 首屏滚出视野就暂停,回来接着播
+new IntersectionObserver(([e])=>{ if (e.isIntersecting) { if (!scrub) vid.play().catch(()=>{}); } else vid.pause(); }, {threshold:0}).observe(document.querySelector(".stage"));
+// 循环:最后 FADE 秒淡到黑,跳回开头再淡入(只在自动播放时)
+vid.addEventListener("ended", ()=>{ if (!scrub) { vid.currentTime = 0; vid.play().catch(()=>{}); } });
+
+function frameLoop(){
+  const t = vid.currentTime || 0;
+  let f = 0;
+  if (!scrub) { if (t > LEN - FADE) f = (t - (LEN - FADE)) / FADE; else if (t < FADE*0.6) f = 1 - t/(FADE*0.6); }
+  fade.style.opacity = f.toFixed(3);
+  bar.style.width = (t/LEN*100)+"%";
+  hud.textContent = `${fmtT(t)} / ${fmtT(LEN)}`;
+  let c = t < T_BAG ? "Fold T-shirt · single episode" : t < T_PULL ? "Pack snack · load transfer" : "Parallel evaluation · held-out seeds";
+  if (cap.dataset.c !== c) { cap.dataset.c = c; cap.style.opacity=0; setTimeout(()=>{ cap.textContent=c; cap.style.opacity=1; },180); }
+  const show = t > T_PULL + 1.5;
+  stats.forEach((s,i)=>{ if (s.classList.contains("on") !== show && !s._pending) { s._pending = true; setTimeout(()=>{ s.classList.toggle("on", show); s._pending=false; }, show ? i*110 : 0); } });
+  requestAnimationFrame(frameLoop);
+}
+addEventListener("scroll", onScroll, {passive:true});
+progressTicks(); requestAnimationFrame(frameLoop);
+vid.play().catch(()=>{});
+
+/* ════════ 排行榜 ════════ */
+let view="std", metric="sr", sortCol=-1, focus=null, gTask="tshirt";
+const lb = document.getElementById("lb"), note = document.getElementById("lbnote");
+const mean = a => a.reduce((x,y)=>x+y,0)/a.length;
+const fmt = v => metric==="sr" ? String(Math.round(v)) : v.toFixed(1);
+
+function cell(v, best, cls=""){ const a = Math.pow(v/100,1.6)*0.22; return `<td class="${cls}"><div class="c"><span class="heat" style="--a:${a.toFixed(3)}"></span><span class="v ${best?'best':''}">${fmt(v)}</span><span class="bar"><i style="width:${v}%"></i></span></div></td>`; }
+
+function renderLB(){
+  let cols, rows;
+  if (view==="std"){
+    cols = [...TASKS, "Avg"];
+    rows = POL.map(p => { const v = metric==="sr"? p.sr : p.sc; return {p, vals:[...v, mean(v)]}; });
+  } else {
+    cols = ["C0","C1","C2","+App.","C0","C1","C2","+App."];
+    rows = POL.map(p => ({p, vals:[...p.g.tshirt[metric==="sr"?"sr":"sc"], ...p.g.silk[metric==="sr"?"sr":"sc"]]}));
+  }
+  const sc = sortCol<0 ? (view==="std"? cols.length-1 : 0) : sortCol;
+  rows.sort((a,b)=> b.vals[sc]-a.vals[sc]);
+  const best = cols.map((_,j)=> Math.max(...rows.map(r=>r.vals[j])));
+  let h = `<colgroup><col style="width:56px"><col style="width:220px">${cols.map(()=>"<col>").join("")}</colgroup><thead>`;
+  if (view==="gen") h += `<tr><th></th><th></th><th class="grp" colspan="4">Flatten T-shirt</th><th class="grp" colspan="4">Flatten silk</th></tr>`;
+  h += `<tr><th>#</th><th>Policy</th>${cols.map((c,j)=>`<th data-j="${j}" class="${j===sc?'sorted':''}">${c}</th>`).join("")}</tr></thead><tbody>`;
+  rows.forEach((r,i)=>{
+    h += `<tr class="data ${focus===r.p.n?'hl':''}" data-p="${r.p.n}"><td class="rank"><div class="c">${String(i+1).padStart(2,"0")}</div></td>
+      <td class="name"><div class="c"><i class="sw" style="background:${r.p.c}"></i>${r.p.n}<span class="tag">${r.p.t}</span></div></td>
+      ${r.vals.map((v,j)=>cell(v, v===best[j], view==="std"&&j===cols.length-1?"avg":"")).join("")}</tr>`;
+  });
+  h += `<tr class="ghost"><td></td><td colspan="${cols.length+1}"><div class="c">+ Your method — submit results under the fixed evaluation seed schedule</div></td></tr></tbody>`;
+  lb.innerHTML = h;
+  lb.classList.toggle("focus", !!focus);
+  note.textContent = (view==="std" ? "Standard distribution (C0 for the flattening tasks). " : "C0–C2: configuration ladder · +App.: C0 with 50 held-out appearance variants. ")
+    + (metric==="sr" ? "Success rate (%)" : "Mean stage-wise score (0–100)") + ", N = 50 per cell. Click a column to sort, a row to highlight.";
+  lb.querySelectorAll("th[data-j]").forEach(th=> th.onclick = ()=>{ sortCol = +th.dataset.j; renderLB(); });
+  lb.querySelectorAll("tr.data").forEach(tr=> tr.onclick = ()=>{ focus = focus===tr.dataset.p ? null : tr.dataset.p; renderLB(); renderSlope(); });
+}
+function seg(id, attr, fn){ const el=document.getElementById(id); el.querySelectorAll("button").forEach(b=> b.onclick=()=>{ el.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); fn(b.dataset[attr]); }); }
+seg("segView","v", v=>{ view=v; sortCol=-1; renderLB(); });
+seg("segMetric","m", m=>{ metric=m; renderLB(); renderSlope(); });
+seg("segTask","t", t=>{ gTask=t; renderLadder(); renderSlope(); });
+
+/* ════════ 斜率图 ════════ */
+const slope = document.getElementById("slope");
+function renderSlope(){
+  const W=520,H=420, T=34,B=44;
+  const xs = [36, 150, 264], xa = [340, 420];   // 左:形态阶梯;右:外观偏移
+  const y = v => T + (H-T-B)*(1-v/100);
+  const k = metric==="sr"?"sr":"sc";
+  let s = "";
+  for (const g of [0,25,50,75,100]) s += `<line class="grid" x1="${xs[0]}" x2="${xs[2]}" y1="${y(g)}" y2="${y(g)}"/><line class="grid" x1="${xa[0]}" x2="${xa[1]}" y1="${y(g)}" y2="${y(g)}"/><text x="${xs[0]-10}" y="${y(g)+4}" text-anchor="end">${g}</text>`;
+  s += `<text x="${(xs[0]+xs[2])/2}" y="14" text-anchor="middle" class="lab" style="letter-spacing:.12em;font-size:10px;fill:var(--muted)">CONFIGURATION</text>`;
+  s += `<text x="${(xa[0]+xa[1])/2}" y="14" text-anchor="middle" class="lab" style="letter-spacing:.12em;font-size:10px;fill:var(--muted)">APPEARANCE</text>`;
+  ["C0","C1","C2"].forEach((t,i)=> s += `<text x="${xs[i]}" y="${H-16}" text-anchor="middle" class="lab">${t}</text>`);
+  ["C0","+App."].forEach((t,i)=> s += `<text x="${xa[i]}" y="${H-16}" text-anchor="middle" class="lab">${t}</text>`);
+  const lab = POL.map(p=>({p, y:y(p.g[gTask][k][3])})).sort((a,b)=>a.y-b.y);
+  for (let i=1;i<lab.length;i++) if (lab[i].y-lab[i-1].y<15) lab[i].y = lab[i-1].y+15;
+  const ord = focus ? [...POL.filter(p=>p.n!==focus), POL.find(p=>p.n===focus)] : POL;
+  ord.forEach(p=>{
+    const v = p.g[gTask][k], on = focus===p.n, dim = focus && !on ? "dim":"", w = on?3:1.8, r = on?4.5:3.2;
+    s += `<g class="${dim}" style="transition:opacity .25s">
+      <path class="l" stroke="${p.c}" stroke-width="${w}" d="M${xs[0]},${y(v[0])} L${xs[1]},${y(v[1])} L${xs[2]},${y(v[2])}"/>
+      <path class="l" stroke="${p.c}" stroke-width="${w}" d="M${xa[0]},${y(v[0])} L${xa[1]},${y(v[3])}"/>
+      ${[0,1,2].map(i=>`<circle cx="${xs[i]}" cy="${y(v[i])}" r="${r}" fill="${p.c}"/>`).join("")}
+      <circle cx="${xa[0]}" cy="${y(v[0])}" r="${r}" fill="${p.c}"/><circle cx="${xa[1]}" cy="${y(v[3])}" r="${r}" fill="${p.c}"/></g>`;
+  });
+  lab.forEach(({p,y:ly})=>{ const dim = focus && focus!==p.n ? "dim":""; s += `<text class="lab ${dim}" x="${xa[1]+12}" y="${ly+4}" style="fill:${p.c};cursor:pointer" data-p="${p.n}">${p.n}</text>`; });
+  slope.innerHTML = s;
+  slope.querySelectorAll("text[data-p]").forEach(t=> t.onclick = ()=>{ focus = focus===t.dataset.p ? null : t.dataset.p; renderLB(); renderSlope(); });
+}
+function renderLadder(){
+  const el = document.getElementById("ladder");
+  el.innerHTML = LADDER[gTask].map((u,i)=>`<div><figure><img src="${u}" alt="C${i}"></figure><figcaption>C${i}</figcaption></div>`).join("");
+}
+renderLB(); renderSlope(); renderLadder();
+
+/* ════════ [01] 仿真器对比:四路共享时钟 ════════ */
+const XS = [
+  {n:"Isaac Sim", s:"PBD cloth", v:"assets/sim/isaac.mp4", ph:["n","n","-"], sc:"0/45", ms:"5.3", why:"Fingers pass through the cloth — no bimanual grasp forms (3/45)."},
+  {n:"Newton VBD", s:"released", v:"assets/sim/vbd.mp4", ph:["y","y","n"], sc:"0/45", ms:"5.6", why:"Holds, but fabric stays on the open fingers; diverges in 12/45."},
+  {n:"Newton Style3D", s:"released", v:"assets/sim/style3d.mp4", ph:["y","y","n"], sc:"0/45", ms:"3.7", why:"Fingers stay embedded in the fabric after the jaws open."},
+  {n:"Style3D + our contact", s:"ours", v:null, ph:["y","y","y"], sc:"45/45", ms:"4.8", why:"Grasp, hold and release in every trial — no attachment rule.", ours:true},
+];
+const XS_LEN = 12.5, XS_MARK = [[4.5,"Grasp"],[7.0,"Hold"],[10.5,"Release"]];
+const xsim = document.getElementById("xsim");
+xsim.innerHTML = XS.map((x,i)=>`<div class="xs ${x.ours?'ours':''}">
+  <div class="vw">${x.v ? `<video src="${x.v}" muted playsinline preload="auto"></video>` :
+    `<div class="pending"><b>RENDER PENDING</b>Same replay, same camera,<br>with our contact</div>`}</div>
+  <div class="meta">
+    <div class="nm"><b>${x.n}</b><span>${x.ms} ms/step</span></div>
+    <div class="phases">${["Grasp","Hold","Release"].map((p,j)=>`<div class="ph" data-k="${j}" data-r="${x.ph[j]}">${p}<i>${x.ph[j]==="y"?"✓":x.ph[j]==="n"?"✕":"–"}</i></div>`).join("")}</div>
+    <div class="why">${x.why}</div>
+    <div class="score"><small>success · 45 trials</small><b class="${x.ours?'ok':'bad'}">${x.sc}</b></div>
+  </div></div>`).join("");
+const xsVids = [...xsim.querySelectorAll("video")];
+const xsTrack = document.getElementById("xsTrack"), xsFill = document.getElementById("xsFill"), xsKnob = document.getElementById("xsKnob"), xsT = document.getElementById("xsT"), xsPlay = document.getElementById("xsPlay");
+XS_MARK.forEach(([t,l])=>{ const m=document.createElement("span"); m.className="mk"; m.style.left=(t/XS_LEN*100)+"%"; m.textContent=l; xsTrack.appendChild(m); });
+let xsTime = 0, xsOn = true, xsVisible = false, xsPrev = performance.now();
+function xsApply(seek){
+  xsVids.forEach(v=>{ const d = v.duration || XS_LEN, tt = Math.min(xsTime, d-0.05);
+    if (seek || Math.abs(v.currentTime - tt) > 0.2) v.currentTime = tt;
+    if (xsOn && xsVisible && xsTime < d-0.05) { if (v.paused) v.play().catch(()=>{}); } else if (!v.paused) v.pause(); });
+  const f = xsTime/XS_LEN*100; xsFill.style.width = f+"%"; xsKnob.style.left = f+"%";
+  xsT.textContent = `${xsTime.toFixed(1).padStart(4,"0")} / ${XS_LEN.toFixed(1)} s`;
+  xsim.querySelectorAll(".ph").forEach(p=>{ const k=+p.dataset.k, r=p.dataset.r; const lit = xsTime >= XS_MARK[k][0];
+    p.classList.toggle("lit", lit && r!=="-"); p.classList.toggle("y", r==="y"); p.classList.toggle("n", r==="n"); });
+  xsPlay.textContent = xsOn ? "❚❚" : "▶";
+}
+function xsLoop(now){ const dt=Math.min(.1,(now-xsPrev)/1000); xsPrev=now;
+  if (xsOn && xsVisible) { xsTime += dt; if (xsTime >= XS_LEN) { xsTime = 0; xsApply(true); } else xsApply(false); }
+  requestAnimationFrame(xsLoop); }
+requestAnimationFrame(xsLoop);
+xsPlay.onclick = ()=>{ xsOn = !xsOn; xsApply(false); };
+let xsDrag = false;
+const xsSeek = e => { const r = xsTrack.getBoundingClientRect(); xsTime = Math.min(XS_LEN-0.01, Math.max(0, (e.clientX-r.left)/r.width*XS_LEN)); xsApply(true); };
+xsTrack.addEventListener("pointerdown", e=>{ xsDrag=true; xsOn=false; xsTrack.setPointerCapture(e.pointerId); xsSeek(e); });
+xsTrack.addEventListener("pointermove", e=>{ if(xsDrag) xsSeek(e); });
+xsTrack.addEventListener("pointerup", ()=>{ xsDrag=false; });
+new IntersectionObserver(([e])=>{ xsVisible = e.isIntersecting; xsApply(false); }, {threshold:.25}).observe(xsim);
+xsApply(true);
+
+/* ════════ [01·b] 摩擦:蠕滑速度 vs 载荷比 ════════ */
+const fric = document.getElementById("fric"), rho = document.getElementById("rho");
+function renderFric(){
+  const r = +rho.value, W=520,H=360,L=44,R=20,T=20,B=40;
+  const x = v => L + (W-L-R)*v, y = v => T + (H-T-B)*(1-v);
+  let s = "";
+  for (const g of [0,.25,.5,.75,1]) s += `<line class="grid" x1="${x(0)}" x2="${x(1)}" y1="${y(g)}" y2="${y(g)}"/><text x="${L-8}" y="${y(g)+3}" text-anchor="end">${g}</text><text x="${x(g)}" y="${H-18}" text-anchor="middle">${g}</text>`;
+  s += `<text x="${x(1)}" y="${H-4}" text-anchor="end">load ratio ρ</text><text x="${L}" y="${T-6}">creep velocity v / ε</text>`;
+  let d = ""; for (let i=0;i<=100;i++){ const p=i/100; d += (i?"L":"M")+x(p)+","+y(1-Math.sqrt(1-p)); }
+  s += `<path d="${d}" fill="none" stroke="#ff8a7a" stroke-width="2"/>`;
+  s += `<path d="M${x(0)},${y(0)} L${x(1)},${y(0)} L${x(1)},${y(1)}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+  const vr = 1-Math.sqrt(1-r);
+  s += `<line x1="${x(r)}" x2="${x(r)}" y1="${y(0)}" y2="${y(1)}" stroke="var(--text)" stroke-opacity=".25" stroke-dasharray="3 4"/>`;
+  s += `<circle cx="${x(r)}" cy="${y(vr)}" r="5" fill="#ff8a7a"/><circle cx="${x(r)}" cy="${y(r>=1?1:0)}" r="5" fill="var(--accent)"/>`;
+  s += `<text x="${x(.40)}" y="${y(.30)}" style="fill:#ff8a7a">regularized · always slides</text><text x="${x(.03)}" y="${y(0)-12}" style="fill:var(--accent)">anchored · v = 0 until ρ = 1</text>`;
+  fric.innerHTML = s;
+  document.getElementById("rhoV").textContent = r.toFixed(2);
+  document.getElementById("vReg").textContent = vr.toFixed(2)+" ε";
+  document.getElementById("vOurs").textContent = r >= 1 ? "sliding" : "0 · stick";
+}
+rho.oninput = renderFric; renderFric();
+
+/* ════════ [01] 任务:大播放器 + 缩略图条,按顺序自动轮播,悬停拖动 ════════ */
+const TK = [
+  {id:"fold", n:"Fold T-shirt", rg:["SC"], c:"Left, right and forward folds, then a settled, compact envelope."},
+  {id:"flatten_tshirt", n:"Flatten T-shirt", rg:["CR","MT"], c:"Coverage ≥ 0.60 and aligned shape distance ≤ 0.25, lying flat."},
+  {id:"flatten_silk", n:"Flatten silk", rg:["CR","MT"], c:"Settled coverage ≥ 95% of the flat cloth, nothing above 5 cm."},
+  {id:"lift_silk", n:"Lift silk", rg:["FH"], c:"Both hands hold the silk and lift it clear of the table, sustained — no attachment."},
+  {id:"carry_bag", n:"Carry bag", rg:["FH","VB"], c:"Both straps pinched and raised 15 cm while the bag lifts — the handles carry the load."},
+  {id:"pack_snack", n:"Pack snack", rg:["FH","VB"], c:"Insert the bar into the bag, then carry the loaded bag with the bar inside."},
+];
+const RG = ["SC","CR","MT","FH","VB"];
+const pvid = document.getElementById("pvid"), pvw = document.getElementById("pvw"), strip = document.getElementById("strip"), pBar = document.getElementById("pBar");
+strip.innerHTML = TK.map((t,i)=>`<div class="sth" data-i="${i}"><i></i><img src="assets/tasks/${t.id}.jpg" alt=""><span><small>T${i+1}</small>${t.n}</span></div>`).join("");
+const sths = [...strip.querySelectorAll(".sth")];
+let pAct = 0, pHover = false, pVis = false;
+function setTask(i){
+  pAct = i; const t = TK[i];
+  pvid.src = `assets/tasks/${t.id}.mp4`; pvid.poster = `assets/tasks/${t.id}.jpg`;
+  document.getElementById("pIdx").textContent = `T${i+1} / ${TK.length}`;
+  document.getElementById("pName").textContent = t.n;
+  document.getElementById("pRg").innerHTML = RG.map(r=>`<span class="chip ${t.rg.includes(r)?'on':''}">${r}</span>`).join("");
+  document.getElementById("pCrit").textContent = t.c;
+  sths.forEach((s,j)=>{ s.classList.toggle("on", j===i); s.querySelector("i").style.width = "0"; });
+  if (pVis && !pHover) pvid.play().catch(()=>{});
+}
+sths.forEach(s=> s.onclick = ()=> setTask(+s.dataset.i));
+pvid.addEventListener("ended", ()=> setTask((pAct+1) % TK.length));
+pvid.addEventListener("timeupdate", ()=>{ if (!pvid.duration) return; const f = pvid.currentTime/pvid.duration*100; pBar.style.width = f+"%"; sths[pAct].querySelector("i").style.width = f+"%"; });
+pvw.addEventListener("pointerenter", e=>{ if (e.pointerType!=="mouse") return; pHover = true; pvid.pause(); });
+pvw.addEventListener("pointermove", e=>{ if (!pHover || !pvid.duration) return; const r = pvw.getBoundingClientRect(); pvid.currentTime = Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)) * (pvid.duration-0.05); });
+pvw.addEventListener("pointerleave", ()=>{ if (!pHover) return; pHover = false; if (pVis) pvid.play().catch(()=>{}); });
+new IntersectionObserver(([e])=>{ pVis = e.isIntersecting; if (pVis && !pHover) pvid.play().catch(()=>{}); else pvid.pause(); }, {threshold:.35}).observe(pvw);
+setTask(0);
+
+/* ════════ [03] 资产:计数 + 外观扇形 ════════ */
+const cio = new IntersectionObserver(es=>es.forEach(e=>{ if(!e.isIntersecting) return; cio.unobserve(e.target);
+  const el=e.target, to=+el.dataset.count, t0=performance.now();
+  (function step(now){ const k=Math.min(1,(now-t0)/1400), ease=1-Math.pow(1-k,3); el.textContent=Math.round(to*ease).toLocaleString("en-US"); if(k<1) requestAnimationFrame(step); })(t0);
+}), {threshold:.6});
+document.querySelectorAll("[data-count]").forEach(el=>cio.observe(el));
+document.querySelectorAll("#factors .ft").forEach(ft=> ft.onclick = ()=> document.querySelectorAll("#factors .ft").forEach(x=>x.classList.toggle("on", x===ft)));
+
+const fan = document.getElementById("fan"), fanSw = document.getElementById("fanSw");
+let fanKind = "silk", fanAct = 0, fanAuto = true;
+function buildFan(){
+  fan.querySelectorAll(".card").forEach(c=>c.remove());
+  for (let i=0;i<6;i++){ const c=document.createElement("div"); c.className="card"; c.innerHTML=`<img src="assets/assets/${fanKind}_v${i+1}.webp" alt="variant ${i+1}">`;
+    c.onclick=()=>{ fanAuto=false; fanAct=i; layoutFan(); }; fan.insertBefore(c, fanSw); }
+  fanSw.innerHTML = [...Array(6)].map((_,i)=>`<button data-i="${i}">V${i+1}</button>`).join("");
+  fanSw.querySelectorAll("button").forEach(b=> b.onclick=()=>{ fanAuto=false; fanAct=+b.dataset.i; layoutFan(); });
+  layoutFan();
+}
+function layoutFan(){
+  fan.querySelectorAll(".card").forEach((c,i)=>{ let k = i - fanAct; if (k>3) k-=6; if (k<-2) k+=6;
+    const a = Math.abs(k);
+    c.style.transform = `translate(-50%,-50%) translateX(${k*17}%) rotate(${k*7}deg) scale(${1 - a*0.1})`;
+    c.style.zIndex = 10 - a; c.style.opacity = a>2 ? 0 : 1 - a*0.18; c.style.filter = a ? `brightness(${1-a*0.18}) saturate(${1-a*0.2})` : "none"; });
+  fanSw.querySelectorAll("button").forEach((b,i)=>b.classList.toggle("on", i===fanAct));
+}
+document.querySelectorAll("#fanWhich button").forEach(b=> b.onclick=()=>{ document.querySelectorAll("#fanWhich button").forEach(x=>x.classList.toggle("on",x===b)); fanKind=b.dataset.w; buildFan(); });
+setInterval(()=>{ if (fanAuto && document.visibilityState==="visible") { fanAct=(fanAct+1)%6; layoutFan(); } }, 2600);
+buildFan();
+
+/* ════════ [05] 仿真到真机:散点(未选中灰、选中高亮+投影线+照片卡)+ 上下对照 ════════ */
+const S2R = [
+  {id:"lift_silk",      n:"Lift silk",       s:[49,50], r:[14,20], p:"grasp_silk"},
+  {id:"flatten_tshirt", n:"Flatten T-shirt", s:[41,50], r:[11,20], p:"flatten_tshirt"},
+  {id:"flatten_silk",   n:"Flatten silk",    s:[43,50], r:[13,20], p:"flatten_silk"},
+  {id:"carry_bag",      n:"Carry bag",       s:[33,50], r:[10,20], p:"grasp_bag"},
+  {id:"pack_snack",     n:"Pack snack",      s:[46,50], r:[17,20], p:"pack_snickers"},
+  {id:"fold",           n:"Fold T-shirt",    s:[18,50], r:[7,20],  p:"fold_tshirt"},
+];
+let s2rAct = "pack_snack";
+const sc = document.getElementById("scatter"), pick = document.getElementById("s2rPick");
+function renderScatter(){
+  const W=Math.round(Math.max(340, Math.min(700, sc.clientWidth||660))), H=Math.round(W*0.9), L=40,R=16,T=12,B=40, x=v=>L+(W-L-R)*v/100, y=v=>T+(H-T-B)*(1-v/100);
+  let s = "";
+  for (const g of [0,25,50,75,100]) s += `<line class="grid" x1="${x(0)}" x2="${x(100)}" y1="${y(g)}" y2="${y(g)}"/><line class="grid" y1="${y(0)}" y2="${y(100)}" x1="${x(g)}" x2="${x(g)}"/><text x="${L-8}" y="${y(g)+3}" text-anchor="end">${g}</text><text x="${x(g)}" y="${H-24}" text-anchor="middle">${g}</text>`;
+  s += `<line x1="${x(0)}" y1="${y(0)}" x2="${x(100)}" y2="${y(100)}" stroke="var(--muted)" stroke-opacity=".45" stroke-dasharray="4 5"/>`;
+  s += `<text x="${x(100)}" y="${H-6}" text-anchor="end">simulation success (%)</text><text x="${x(0)}" y="${T-2}">real-robot success (%)</text>`;
+  const off = {lift_silk:[10,4], flatten_silk:[-10,-8], pack_snack:[-12,4], flatten_tshirt:[10,14], carry_bag:[10,4], fold:[10,4]};
+  const anc = {flatten_silk:"end", pack_snack:"end"};
+  const act = S2R.find(t=>t.id===s2rAct), ax = x(act.s[0]/act.s[1]*100), ay = y(act.r[0]/act.r[1]*100);
+  // 选中点:到两轴的投影线 + 轴上读数
+  s += `<line x1="${ax}" y1="${ay}" x2="${ax}" y2="${y(0)}" stroke="var(--accent)" stroke-opacity=".6" stroke-dasharray="2 3"/>
+        <line x1="${ax}" y1="${ay}" x2="${x(0)}" y2="${ay}" stroke="var(--accent)" stroke-opacity=".6" stroke-dasharray="2 3"/>
+        <rect x="${ax-18}" y="${y(0)+4}" width="36" height="15" rx="2" fill="var(--accent)"/><text x="${ax}" y="${y(0)+15}" text-anchor="middle" style="fill:var(--bg);font-weight:600">${Math.round(act.s[0]/act.s[1]*100)}</text>
+        <rect x="${x(0)-38}" y="${ay-8}" width="32" height="15" rx="2" fill="var(--accent)"/><text x="${x(0)-22}" y="${ay+3}" text-anchor="middle" style="fill:var(--bg);font-weight:600">${Math.round(act.r[0]/act.r[1]*100)}</text>`;
+  S2R.forEach(t=>{ const sx = x(t.s[0]/t.s[1]*100), ry = y(t.r[0]/t.r[1]*100), on = t.id===s2rAct, o = off[t.id];
+    s += `<g class="pt ${on?'on':''}" data-id="${t.id}"><circle cx="${sx}" cy="${ry}" r="16" fill="transparent"/>
+      ${on ? `<circle class="ring" cx="${sx}" cy="${ry}" r="10"/>` : ""}
+      <circle class="dot" cx="${sx}" cy="${ry}" r="${on?7:5}" fill="${on?'var(--accent)':'var(--muted)'}" fill-opacity="${on?1:.55}"/>
+      ${(W < 500 && !on) ? '' : (()=>{ let dx=o[0], a=anc[t.id]||'start'; if (a==='start' && sx+dx+t.n.length*6.6 > W-4) { dx=-10; a='end'; } return `<text class="l" x="${sx+dx}" y="${ry+o[1]}" text-anchor="${a}">${t.n}</text>`; })()}</g>`; });
+  // 照片卡:贴在选中点旁边,放不下就翻到另一侧
+  const cw=Math.round(Math.max(120, W*0.27)), ch=Math.round(cw*0.71), cx = ax + (ax > W*0.55 ? -cw-22 : 22), cy = (ay - ch - 14 < T+4) ? Math.min(H-B-ch-6, ay + 18) : ay - ch - 14;
+  if (W >= 500) s += `<g pointer-events="none"><rect x="${cx}" y="${cy}" width="${cw}" height="${ch}" rx="4" fill="var(--bg)" stroke="var(--accent)" stroke-opacity=".6"/>
+        <image href="assets/photos/${act.p}.webp" x="${cx+4}" y="${cy+4}" width="${cw-8}" height="${(cw-8)*9/16}" preserveAspectRatio="xMidYMid slice"/>
+        <text x="${cx+8}" y="${cy+ch-10}" style="fill:var(--text)">${act.s[0]}/${act.s[1]} → ${act.r[0]}/${act.r[1]}</text></g>`;
+  sc.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  sc.innerHTML = s;
+  sc.querySelectorAll(".pt").forEach(g=> g.onclick = ()=> setS2R(g.dataset.id));
+}
+function setS2R(id){
+  s2rAct = id; const t = S2R.find(z=>z.id===id);
+  const vs = document.getElementById("pvSim"), vr = document.getElementById("pvReal");
+  vs.src = `assets/tasks/${id}.mp4`; vr.src = `assets/real/${id}.mp4`; vs.play().catch(()=>{}); vr.play().catch(()=>{});
+  document.getElementById("cSim").textContent = `${t.n} · ${t.s[0]}/${t.s[1]}`;
+  document.getElementById("cReal").textContent = `${t.n} · ${t.r[0]}/${t.r[1]}`;
+  pick.querySelectorAll("button").forEach(b=>b.classList.toggle("on", b.dataset.id===id));
+  renderScatter();
+}
+pick.innerHTML = S2R.map(t=>`<button data-id="${t.id}">${t.n}</button>`).join("");
+pick.querySelectorAll("button").forEach(b=> b.onclick=()=>setS2R(b.dataset.id));
+setS2R(s2rAct);
+let s2rRz = 0; addEventListener('resize', ()=>{ clearTimeout(s2rRz); s2rRz = setTimeout(renderScatter, 150); });
+
+/* ════════ 滚动淡入 ════════ */
+const rio = new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); rio.unobserve(e.target); } }), {threshold:.12, rootMargin:"0px 0px -8% 0px"});
+document.querySelectorAll(".rv").forEach(el=>rio.observe(el));
+
+/* ════════ 方案切换 ════════ */
+document.querySelectorAll('input[name=theme]').forEach(r=> r.onchange = ()=>{ document.documentElement.dataset.theme = r.value; renderSlope(); });
+document.getElementById("pmin").onclick = ()=> document.getElementById("picker").classList.toggle("min");
+// 也可用地址参数直达某方案:index.html?theme=paper&order=wide
+{ const q = new URLSearchParams(location.search);
+  for (const k of ["theme"]) { const v=q.get(k); const r=v && document.querySelector(`input[name=${k}][value=${v}]`); if(r){ r.checked=true; r.onchange(); } }
+  const tq=q.get("t"); if(tq){ vid.currentTime=+tq; } const y=q.get("y"); if(y) setTimeout(()=>{ scrollTo({top:+y*innerHeight}); onScroll(); },50); }
+</script>
+</body>
+</html>
