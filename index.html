@@ -4,9 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FabricBench</title>
+<script>
+if (new URLSearchParams(location.search).get("affiliations") === "logos") {
+  document.documentElement.classList.add("show-affiliation-logos");
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 /* ───────── 三套风格(右下角切换) ───────── */
 :root, [data-theme="cinema"] {
@@ -466,30 +471,60 @@ footer .foot { display:grid; grid-template-columns:1fr 1.3fr; gap:40px; align-it
   .pvw { max-height:calc(100vh - 80px); aspect-ratio:auto; height:calc(100vh - 80px); }
 }
 /* 论文标题 / 作者 / 单位 */
-.byline { padding:clamp(64px,9vh,110px) 0 clamp(56px,8vh,90px); border-bottom:1px solid var(--line); }
-.by-k { font-size:11px; letter-spacing:.1em; }
-.by-k .venue { color:var(--accent); }
-.ptitle { margin-top:18px; max-width:1320px; font-size:clamp(28px,3.3vw,48px); line-height:1.1; }
-.names { margin-top:30px; display:flex; flex-wrap:wrap; gap:8px 24px; font-size:clamp(15px,1.25vw,18px); font-weight:500; color:var(--text); max-width:1320px; }
-.names a { cursor:pointer; border-bottom:1px solid transparent; transition:border-color .2s; }
-.names a:hover { border-color:var(--muted); }
-.names sup, .affs sup { font-size:.62em; color:var(--accent); margin-left:1px; font-weight:500; }
-.affs { margin-top:16px; display:flex; flex-wrap:wrap; gap:4px 24px; font-size:14px; color:var(--muted); }
-.notes { margin-top:8px; display:flex; gap:20px; font-size:13px; color:var(--muted); }
-.notes b { color:var(--accent); font-weight:500; }
-.logos { display:flex; gap:14px; flex-wrap:wrap; margin-top:30px; }
-.logos i { width:132px; height:48px; border:1px dashed var(--line); border-radius:6px; display:flex; align-items:center; justify-content:center; font:500 9px/1 "JetBrains Mono", monospace; letter-spacing:.1em; color:var(--muted); font-style:normal; }
-.meta { display:grid; grid-template-columns:140px 1fr; gap:12px 0; margin-top:36px; padding-top:26px; border-top:1px solid var(--line); max-width:720px; }
-.meta dt { font:500 11px/22px "JetBrains Mono", monospace; letter-spacing:.1em; color:var(--muted); }
-.meta dd { font-size:15px; line-height:22px; }
-.meta a { color:var(--accent); }
-.meta a.soon { color:var(--muted); cursor:default; }
-@media (max-width: 760px) {
-  .names { gap:4px 16px; margin-top:22px; }
-  .affs { font-size:13px; flex-direction:column; }
-  .notes { flex-direction:column; gap:2px; }
-  .logos i { width:96px; height:38px; }
-  .meta { grid-template-columns:112px 1fr; }
+.byline {
+  --horizon:color-mix(in srgb, #92c5b8 84%, var(--text));
+  --style3d:color-mix(in srgb, #c1a2db 84%, var(--text));
+  padding:clamp(50px, 6vw, 88px) 0;
+  scroll-margin-top:52px;
+  text-align:left;
+  border-bottom:1px solid var(--line);
+  background:radial-gradient(ellipse at 0% 0%, rgba(var(--accent-rgb),.075), transparent 70%), var(--bg);
+}
+[data-theme="paper"] .byline { --horizon:#316d61; --style3d:#75538b; }
+.ptitle { max-width:1060px; margin:0; font-size:clamp(27px,3vw,43px); line-height:1.13; text-wrap:pretty; }
+.names, .affs { padding:0; list-style:none; }
+.names {
+  max-width:1120px; margin:clamp(24px,2.4vw,34px) 0 0;
+  font-size:clamp(16px,1.32vw,20px); line-height:1.7; font-weight:500;
+  text-wrap:balance;
+}
+.names li { display:inline-block; margin:2px 1em 2px 0; white-space:nowrap; }
+.byline [data-aff="1"] { --aff-color:var(--accent); }
+.byline [data-aff="2"] { --aff-color:var(--horizon); }
+.byline [data-aff="3"] { --aff-color:var(--style3d); }
+.names sup { margin-left:2px; color:var(--aff-color); font-size:.6em; font-weight:600; line-height:0; }
+.affs { display:flex; justify-content:flex-start; flex-wrap:wrap; gap:9px 26px; margin:20px 0 0; }
+.affs li { display:flex; align-items:center; gap:7px; font-size:14px; color:color-mix(in srgb,var(--text) 78%,var(--muted)); }
+.affs span {
+  display:grid; place-items:center; width:20px; height:20px; font-size:11px; font-weight:600;
+  color:var(--aff-color); border:1px solid color-mix(in srgb,var(--aff-color) 40%,transparent); border-radius:50%;
+}
+.paper-links {
+  display:flex; justify-content:flex-start; flex-wrap:wrap; align-items:center; gap:12px 24px;
+  width:fit-content; max-width:100%; margin:28px 0 0; padding:16px 0 0; border-top:1px solid var(--line);
+  font-size:13px; color:var(--muted);
+}
+.paper-links a { color:var(--text); text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:4px; }
+.paper-links a:hover, .paper-links a:focus-visible { text-decoration-color:var(--accent); }
+@media (max-width:620px) {
+  .byline { padding:40px 0; }
+  .names { display:grid; grid-template-columns:repeat(2,max-content); justify-content:flex-start; gap:5px 24px; text-align:left; }
+  .names li { margin:0; }
+  .affs { width:fit-content; display:grid; justify-items:start; gap:8px; margin-top:22px; }
+  .paper-links { gap:10px 18px; }
+}
+.affs .aff-logo { display:none; }
+.show-affiliation-logos .affs { column-gap:clamp(28px,4vw,64px); margin-top:26px; }
+.show-affiliation-logos .affs li { display:grid; grid-template-columns:20px auto; justify-content:start; gap:10px 7px; }
+.show-affiliation-logos .aff-logo {
+  grid-column:1/-1; display:block; width:auto; height:42px; max-width:114px; object-fit:contain;
+  object-position:left center; filter:brightness(0) invert(.85);
+}
+[data-theme="paper"].show-affiliation-logos .aff-logo { filter:brightness(0); }
+@media (max-width:620px) {
+  .show-affiliation-logos .affs { gap:10px; }
+  .show-affiliation-logos .affs li { grid-template-columns:76px 20px auto; align-items:center; gap:7px; }
+  .show-affiliation-logos .aff-logo { grid-column:auto; width:68px; height:30px; }
 }
 /* 竖屏(手机+平板)首屏:视频占上方约 62%,标题落在深色底上;横屏仍铺满 */
 @media (orientation: portrait) {
@@ -697,7 +732,7 @@ footer .foot { display:grid; grid-template-columns:1fr 1.3fr; gap:40px; align-it
 
 <nav class="nav" id="nav">
   <a class="mark" href="#">FabricBench</a>
-  <div class="links"><a href="#assets">Assets</a><a href="#tasks">Tasks</a><a href="#simulator">Simulator</a><a href="#leaderboard">Leaderboard</a><a href="#sim2real">Sim-to-real</a><a href="#">Paper</a></div>
+  <div class="links"><a href="#assets">Assets</a><a href="#tasks">Tasks</a><a href="#simulator">Simulator</a><a href="#leaderboard">Leaderboard</a><a href="#sim2real">Sim-to-real</a><a href="#paper">Paper</a></div>
 </nav>
 
 <header class="hero" id="hero">
@@ -713,7 +748,7 @@ footer .foot { display:grid; grid-template-columns:1fr 1.3fr; gap:40px; align-it
         <div>
           <h1>FabricBench</h1>
           <p class="sub">A standardized policy benchmark for bimanual fabric manipulation, built on a contact-driven deformable simulator.</p>
-          <div class="cta"><a class="btn primary" href="#leaderboard">Leaderboard</a><a class="btn" href="#">Paper</a><a class="btn" href="#">Code</a></div>
+          <div class="cta"><a class="btn primary" href="#leaderboard">Leaderboard</a><a class="btn" href="#paper">Paper</a><a class="btn" href="#">Code</a></div>
         </div>
         <div class="stats" id="stats">
           <div class="stat"><b>6</b><small>Tasks</small></div>
@@ -729,23 +764,35 @@ footer .foot { display:grid; grid-template-columns:1fr 1.3fr; gap:40px; align-it
   </div>
 </header>
 
-<!-- ═════════ 论文标题 / 作者 / 单位(版式占位,内容待填) ═════════ -->
-<section class="byline" id="paper">
+<!-- ═════════ 论文标题 / 作者 / 单位 ═════════ -->
+<section class="byline" id="paper" aria-labelledby="paper-title">
   <div class="wrap">
-    <div class="by-k mono"><span class="venue">Venue 2027 · placeholder</span></div>
-    <h2 class="ptitle">FabricBench: A Standardized Policy Benchmark for Bimanual Fabric Manipulation with a Contact-Driven Deformable Simulator</h2>
-    <p class="names">
-      <a>Author Name<sup>1*</sup></a><a>Author Name<sup>1*</sup></a><a>Author Name<sup>2</sup></a><a>Author Name<sup>1</sup></a><a>Author Name<sup>3</sup></a><a>Author Name<sup>2</sup></a><a>Author Name<sup>1</sup></a><a>Author Name<sup>3</sup></a><a>Author Name<sup>1†</sup></a>
-    </p>
-    <p class="affs"><span><sup>1</sup>Affiliation One</span><span><sup>2</sup>Affiliation Two</span><span><sup>3</sup>Affiliation Three</span></p>
-    <p class="notes"><span><b>*</b> Equal contribution</span><span><b>†</b> Corresponding author</span></p>
-    <div class="logos"><i>LOGO</i><i>LOGO</i><i>LOGO</i></div>
-    <dl class="meta">
-      <dt>PAPER</dt><dd><a class="soon">arXiv · coming soon</a></dd>
-      <dt>CODE</dt><dd><a class="soon">GitHub · coming soon</a></dd>
-      <dt>LEADERBOARD</dt><dd><a href="#leaderboard">View leaderboard →</a></dd>
-      <dt>CITE</dt><dd><a href="#cite">BibTeX ↓</a></dd>
-    </dl>
+    <h2 class="ptitle" id="paper-title">FabricBench: A Standardized Policy Benchmark for Bimanual Fabric Manipulation with a Contact-Driven Deformable Simulator</h2>
+    <ol class="names" aria-label="Authors">
+      <li data-aff="1">Wenkang Hu<sup>1,*</sup></li>
+      <li data-aff="1">Haoran Wang<sup>1,*</sup></li>
+      <li data-aff="2">Liu Liu<sup>2</sup></li>
+      <li data-aff="3">Wenchao Huang<sup>3</sup></li>
+      <li data-aff="1">Yiji Chen<sup>1</sup></li>
+      <li data-aff="2">Mengao Zhao<sup>2</sup></li>
+      <li data-aff="1">Xincheng Tang<sup>1</sup></li>
+      <li data-aff="1">Zhengjie Shu<sup>1</sup></li>
+      <li data-aff="1">Lai Jiang<sup>1</sup></li>
+      <li data-aff="1">Wei Li<sup>1</sup></li>
+      <li data-aff="3">Zhendong Wang<sup>3</sup></li>
+      <li data-aff="2">Zhizhong Su<sup>2</sup></li>
+      <li data-aff="3">Huamin Wang<sup>3</sup></li>
+      <li data-aff="1">Ruigang Yang<sup>1,†</sup></li>
+    </ol>
+    <ul class="affs" aria-label="Affiliations">
+      <li data-aff="1"><img class="aff-logo" src="assets/affiliations/sjtu.png" alt=""><span>1</span> Shanghai Jiao Tong University</li>
+      <li data-aff="2"><img class="aff-logo" src="assets/affiliations/horizon.png" alt=""><span>2</span> Horizon Robotics</li>
+      <li data-aff="3"><img class="aff-logo" src="assets/affiliations/style3d.png" alt=""><span>3</span> Style3D Research</li>
+    </ul>
+    <div class="paper-links">
+      <span>arXiv · coming soon</span><span>GitHub · coming soon</span>
+      <a href="#leaderboard">Leaderboard</a><a href="#cite">BibTeX</a>
+    </div>
   </div>
 </section>
 
@@ -915,11 +962,15 @@ footer .foot { display:grid; grid-template-columns:1fr 1.3fr; gap:40px; align-it
     <div class="wrap foot">
       <div><div class="mark" style="font-family:var(--display);font-size:22px;font-weight:var(--display-weight);letter-spacing:var(--display-track);color:var(--text)">FabricBench</div>
         <p style="margin-top:10px">Internal preview · 2026 · simulator, assets, demonstrations and evaluation code to be released.</p></div>
-      <pre class="bib mono" id="cite">@inproceedings{fabricbench2027,
+      <pre class="bib mono" id="cite">@misc{fabricbench2026,
   title  = {FabricBench: A Standardized Policy Benchmark for Bimanual
             Fabric Manipulation with a Contact-Driven Deformable Simulator},
-  author = {...},
-  year   = {2027}
+  author = {Wenkang Hu and Haoran Wang and Liu Liu and
+            Wenchao Huang and Yiji Chen and Mengao Zhao and
+            Xincheng Tang and Zhengjie Shu and Lai Jiang and
+            Wei Li and Zhendong Wang and Zhizhong Su and
+            Huamin Wang and Ruigang Yang},
+  year   = {2026}
 }</pre>
     </div>
   </footer>
