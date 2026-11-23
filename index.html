@@ -1143,7 +1143,7 @@ renderLB(); renderSlope(); renderLadder();
 /* ════════ [01] 仿真器对比:四路共享时钟 ════════ */
 const XS = [
   {n:"Real robot", s:"real", v:"assets/sim/real.mp4", off:0, ph:["y","y","y"], sc:"", ms:"", why:"grasped, held, released", real:true, ok:true},
-  {n:"FabricBench", s:"ours", v:"assets/sim/traj02_it20_realcam.mp4", off:0.0, ph:["y","y","y"], sc:"45/45", ms:"4.8", why:"grasped, held, released", ours:true, ok:true},
+  {n:"FabricBench", s:"ours", v:"assets/sim/traj02_it30_L3_bright.mp4", off:0.0, ph:["y","y","y"], sc:"45/45", ms:"4.8", why:"grasped, held, released", ours:true, ok:true},
   {n:"Isaac Sim PBD", s:"PBD cloth", v:"assets/sim/t02_isaac_realcam.mp4", ph:["n","n","-"], sc:"0/45", ms:"5.3", why:"fails to grasp", ok:false},
   {n:"VBD", s:"released", v:"assets/sim/t02_vbd_realcam.mp4", ph:["y","y","n"], sc:"0/45", ms:"5.6", why:"fingers penetrate the cloth; not released", ok:false},
   {n:"Style3D", s:"released", v:"assets/sim/t02_style3d_realcam.mp4", ph:["y","y","n"], sc:"0/45", ms:"3.7", why:"fingers penetrate the cloth; snags on release", ok:false},
