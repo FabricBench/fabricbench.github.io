@@ -1,7 +1,4 @@
-# 排行榜页暂不上线(本地预览)
-leaderboard.html
+# local-only drafts
 model.html
-assets/lb.css
-assets/lb_common.js
-assets/leaderboard_data.js
 proposal_*.html
+assets/sim_deployed/

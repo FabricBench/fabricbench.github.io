@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FabricBench Leaderboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/lb.css">
+<script>(function(){var t=null;try{t=new URLSearchParams(location.search).get("theme")||localStorage.getItem("fb-lb-theme");}catch(e){}if(t!=="dark")document.documentElement.setAttribute("data-theme","light");})();</script>
+<style>
+html[data-theme="light"] { --bg:#f5f6f8; --bg2:#ffffff; --bg3:#eef1f5; --line:#e3e6eb; --line2:#d3d8df; --text:#111827; --muted:#6b7280; --dim:#9aa1ad;
+  --accent:#1f6fd1; --accent-rgb:31,111,209; --warn:#b7791f; --vla:#4a59d1; --wam:#0f8068; --il:#7646b3; color-scheme:light; }
+html[data-theme="light"] td { color:#1f2937; }
+html[data-theme="light"] tbody tr:hover td { background:rgba(17,24,39,.035); }
+html[data-theme="light"] td.md, html[data-theme="light"] th.c2 { box-shadow:6px 0 8px -6px rgba(17,24,39,.15); }
+html[data-theme="light"] .card { box-shadow:0 1px 2px rgba(17,24,39,.04), 0 12px 32px -18px rgba(17,24,39,.18); }
+.thm { font:500 12px/1 var(--mono); color:var(--muted); background:none; border:1px solid var(--line); border-radius:999px; padding:7px 12px; cursor:pointer; margin-left:18px; }
+.thm:hover { color:var(--text); border-color:var(--line2); }
+.page { max-width:min(1680px, 100%); }
+.nav, footer { padding-left:max(clamp(16px,4vw,56px), calc((100% - 1680px) / 2 + 56px)); padding-right:max(clamp(16px,4vw,56px), calc((100% - 1680px) / 2 + 56px)); }
+td { font-size:15px; height:54px; } td.md { font-size:15px; } td.best .s { font-weight:700; }
+th { font-size:11px; padding:14px 10px; }
+.sec:first-of-type { margin-top:20px; }
+@media (max-width:760px){ td { font-size:13.5px; height:48px; } }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="mark" href="index.html">FabricBench</a>
+  <div class="links"><a href="index.html">Home</a><a class="on" href="leaderboard.html">Leaderboard</a><a class="opt" href="#">Paper</a><button class="thm" id="thm" type="button"></button></div>
+</nav>
+
+<div class="page">
+  <aside class="toc" id="toc">
+    <small>ON THIS PAGE</small>
+    <a href="#main">Main</a><a href="#generalization">Generalization</a><a href="#sim2real">Sim-to-real</a>
+  </aside>
+
+  <main>
+    <header class="head">
+      <div class="row"><h1>Leaderboard</h1></div>
+      <p>Six policies, each trained on the same 200 simulated demonstrations per task with its official configuration and evaluated on 50 fixed-seed episodes per cell. Higher is better.</p>
+    </header>
+
+    <section class="sec" id="main">
+      <div class="card">
+        <div class="bh"><div><b>Main results</b><span id="mainSort"></span></div><i id="mainUpd"></i></div>
+        <div class="ctl">
+          <label>TYPE <span class="seg" id="mType"><button data-v="all" class="on">All</button><button data-v="VLA">VLA</button><button data-v="WAM">WAM</button><button data-v="IL">IL</button></span></label>
+          <label>METRIC <span class="seg" id="mKey"><button data-v="r" class="on">Success rate</button><button data-v="s">Score</button></span></label>
+        </div>
+        <div class="tablebox"><table id="tMain"></table></div>
+        <div class="foot">Success rate (%) or score (0–100) over 50 fixed-seed episodes; C0 initial state for the flattening tasks. Click a column header to sort.</div>
+      </div>
+    </section>
+
+    <section class="sec" id="generalization">
+      <h2>Generalization</h2>
+      <p>Flattening tasks only. One factor changes at a time: the initial configuration (C0 → C2) or the appearance (50 held-out variants at C0).</p>
+      <div class="card">
+        <div class="bh"><div><b>Flattening tasks</b><span id="genSort"></span></div><i class="upd"></i></div>
+        <div class="ctl">
+          <label>METRIC <span class="seg" id="gKey"><button data-v="r" class="on">Success rate</button><button data-v="s">Score</button></span></label>
+        </div>
+        <div class="tablebox"><table id="tGen"></table></div>
+        <div class="foot">C0–C2: configuration ladder, from a flat start to heavily crumpled. +App.: C0 with held-out colors and textures. Avg is over the eight cells.</div>
+      </div>
+    </section>
+
+    <section class="sec" id="sim2real">
+      <h2>Sim-to-real</h2>
+      <p>Zero-shot deployment on the real dual-arm Piper, 20 trials per task, camera placed as in simulation.</p>
+      <div class="card">
+        <div class="bh"><div><b>Real robot</b><span>Sorted by real-robot success rate</span></div><i class="upd"></i></div>
+        <div class="tablebox"><table id="tS2r"></table></div>
+        <div class="foot">Each cell is <b>simulation → real</b> success rate. Real-robot results are reported for π0.5.</div>
+      </div>
+    </section>
+  </main>
+</div>
+<footer>FabricBench · Leaderboard</footer>
+
+<script src="assets/leaderboard_data.js"></script>
+<script src="assets/lb_common.js"></script>
+<script>
+let mType = "all", mKey = "r", mCol = -1, gKey = "r";
+document.getElementById("mainUpd").textContent = `Updated ${D.updated.replaceAll("-", ".")}`;
+document.querySelectorAll(".upd").forEach(e=> e.textContent = `Updated ${D.updated.replaceAll("-", ".")}`);
+const KEY = {s:"score", r:"success rate"};
+const one = (v, key, avg) => `<span class="s">${key==="s" || avg ? sc1(v) : v}</span>`;
+const head3 = `<th class="c1">Rank</th><th class="l c2">Model</th><th class="hm">Type</th>`;
+const model3 = (m, i) => `<td class="rk">${medal(i)}</td><td class="md"><span class="w">${logo(m)}${m.n}</span></td><td class="hm"><span class="tp ${m.t}">${m.t}</span></td>`;
+
+/* ── 主榜:Average + 6 个任务,每格 score/SR ── */
+function renderMain(){
+  const k = mKey==="s" ? "sc" : "sr";
+  const val = (m, j) => j < 0 ? mean(m[k]) : m[k][j];
+  let rows = M.filter(m => mType==="all" || m.t===mType).sort((a,b)=> val(b,mCol) - val(a,mCol));
+  const best = [-1, ...T.map((_,j)=>j)].map(j => Math.max(...rows.map(m=>val(m,j))));
+  const hot = j => j===mCol ? "hot" : "";
+  let h = `<thead><tr>${head3}<th class="sort ${hot(-1)}" data-j="-1">Average</th>${T.map((t,j)=>`<th class="sort ${hot(j)}" data-j="${j}">${t.n}</th>`).join("")}</tr></thead><tbody>`;
+  rows.forEach((m,i)=>{
+    const cells = [-1, ...T.map((_,j)=>j)].map((j,c)=>{
+      return `<td class="${hot(j)} ${val(m,j)===best[c]?'best':''}">${one(val(m,j), mKey, j<0)}</td>`;
+    }).join("");
+    h += `<tr>${model3(m,i)}${cells}</tr>`;
+  });
+  h += `<tr class="ghost"><td></td><td colspan="${T.length+3}">+ Your method — submission opens with the public release</td></tr></tbody>`;
+  const tb = document.getElementById("tMain"); tb.innerHTML = h;
+  tb.querySelectorAll("th.sort").forEach(th=> th.onclick = ()=>{ mCol = +th.dataset.j; renderMain(); });
+  document.getElementById("mainSort").textContent = `Sorted by ${mCol<0 ? "average" : T[mCol].n} ${KEY[mKey]}`;
+}
+
+/* ── 泛化榜:T-shirt / Silk 各 C0 C1 C2 +App ── */
+function renderGen(){
+  const k = gKey==="s" ? "sc" : "sr";
+  const cells = m => [...m.g.tshirt[k], ...m.g.silk[k]];
+  const cellsO = m => [...m.g.tshirt.sc, ...m.g.silk.sc].map((s,j)=>[s, [...m.g.tshirt.sr, ...m.g.silk.sr][j]]);
+  const rows = [...M].sort((a,b)=> mean(cells(b)) - mean(cells(a)));
+  const best = [...Array(8).keys()].map(j=> Math.max(...rows.map(m=>cells(m)[j])));
+  const bestAvg = Math.max(...rows.map(m=>mean(cells(m))));
+  const sub = ["C0","C1","C2","+App."];
+  let h = `<thead><tr><th class="c1"></th><th class="c2"></th><th class="hm"></th><th></th><th class="grp gl" colspan="4">Flatten T-shirt</th><th class="grp gl" colspan="4">Flatten silk</th></tr>
+    <tr>${head3}<th class="hot">Avg</th>${[...sub,...sub].map((s,j)=>`<th class="${j%4===0?'gl':''}">${s}</th>`).join("")}</tr></thead><tbody>`;
+  rows.forEach((m,i)=>{
+    const o = cellsO(m), a = mean(cells(m));
+    h += `<tr>${model3(m,i)}<td class="hot ${a===bestAvg?'best':''}">${one(a, gKey, true)}</td>
+      ${o.map(([s,r],j)=>`<td class="${j%4===0?'gl':''} ${cells(m)[j]===best[j]?'best':''}">${one(cells(m)[j], gKey)}</td>`).join("")}</tr>`;
+  });
+  document.getElementById("tGen").innerHTML = h + "</tbody>";
+  document.getElementById("genSort").textContent = `Sorted by average ${KEY[gKey]}`;
+}
+
+/* ── 真机榜:仿真 → 真机 ── */
+function renderS2r(){
+  const realAvg = m => m.real ? mean(T.map(t=> m.real[t.id][0]/m.real[t.id][1]*100)) : -1;
+  const rows = [...M].sort((a,b)=> realAvg(b) - realAvg(a));
+  let h = `<thead><tr>${head3}<th class="hot">Real avg</th><th>Sim avg</th>${T.map(t=>`<th>${t.n}</th>`).join("")}</tr></thead><tbody>`;
+  rows.forEach((m,i)=>{
+    if (!m.real) return;
+    h += `<tr>${model3(m,i)}<td class="hot best"><span class="s">${pct(realAvg(m))}</span></td><td><span class="r">${pct(mean(m.sr))}</span></td>
+      ${T.map((t,j)=>{ const r = m.real[t.id]; return `<td><span class="r">${m.sr[j]}% → </span><span class="s">${r[0]}/${r[1]}</span></td>`; }).join("")}</tr>`;
+  });
+  document.getElementById("tS2r").innerHTML = h + "</tbody>";
+}
+
+const bind = (id, fn) => document.querySelectorAll(`#${id} button`).forEach(b=> b.onclick = ()=>{
+  document.querySelectorAll(`#${id} button`).forEach(x=>x.classList.toggle("on", x===b)); fn(b.dataset.v); });
+bind("mType", v=>{ mType = v; renderMain(); });
+bind("mKey", v=>{ mKey = v; renderMain(); });
+bind("gKey", v=>{ gKey = v; renderGen(); });
+renderMain(); renderGen(); renderS2r();
+
+/* 左侧目录高亮当前分区 */
+const links = [...document.querySelectorAll("#toc a")];
+const secs = links.map(a => document.querySelector(a.getAttribute("href")));
+function spy(){ let k = 0; secs.forEach((s,i)=>{ if (s.getBoundingClientRect().top < 140) k = i; }); if (innerHeight + scrollY >= document.body.scrollHeight - 4) k = secs.length - 1; links.forEach((a,i)=> a.classList.toggle("on", i===k)); }
+addEventListener("scroll", spy, {passive:true}); spy();
+</script>
+<script>
+(function(){ const b=document.getElementById("thm"), r=document.documentElement;
+  const lab=()=> b.textContent = r.getAttribute("data-theme")==="light" ? "◐ Dark" : "◑ Light";
+  b.onclick=()=>{ const l = r.getAttribute("data-theme")!=="light"; if(l) r.setAttribute("data-theme","light"); else r.removeAttribute("data-theme");
+    try{ localStorage.setItem("fb-lb-theme", l?"light":"dark"); }catch(e){} lab(); };
+  lab(); })();
+</script>
+</body>
+</html>
